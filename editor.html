@@ -138,7 +138,7 @@
       border-color: var(--accent-color);
     }
 
-    .candidate-selector-row {
+    .picker-row {
       display: flex;
       gap: 8px;
       margin-top: 6px;
@@ -194,27 +194,29 @@
 
     textarea.toolbar-textarea {
       border-radius: 0 0 6px 6px;
+      white-space: pre-wrap; /* 改行の視認対応 */
     }
 
-    /* テロップライブプレビュー */
+    /* テロップライブプレビュー (マルチライン/改行対応) */
     .preview-box {
       background: #000;
       border: 2px solid #30363d;
       border-radius: 6px;
       padding: 12px;
       margin-top: 8px;
-      min-height: 48px;
+      min-height: 52px;
       display: flex;
       align-items: center;
       overflow-x: auto;
     }
 
     .preview-text {
-      white-space: nowrap;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 500;
       color: #fff;
       letter-spacing: 0.04em;
+      white-space: pre-wrap; /* 改行を画面にそのまま反映 */
+      line-height: 1.4;
     }
 
     @keyframes remark-blink {
@@ -242,7 +244,7 @@
     .btn-secondary:hover { background: #30363d; }
 
     .item-list {
-      max-height: 560px;
+      max-height: 580px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -321,9 +323,9 @@
   </header>
 
   <div class="notice">
-    💡 <b>型（駅）非依存の共通JSON設計</b>:<br>
-    ・`candidates`（種別候補）は全駅型共通の識別キーです。ドロップダウンから選択して簡単に候補をピックできます。<br>
-    ・実際の画像パス補完は `index.html` 側の選択型（駅）に合わせて自動的に解決される設計となっています。
+    💡 <b>更新情報</b>:<br>
+    ・車両名および種別候補は、便利なプルダウンから選んで簡単にセットできます。<br>
+    ・下部案内テロップは改行（Enter）に対応しています。Word風ツールバーで太字・文字色・点滅も自由自在です。
   </div>
 
   <div class="grid-container">
@@ -334,20 +336,35 @@
         <form id="vehicleForm" onsubmit="saveVehicle(event)">
           <input type="hidden" id="editIndex" value="-1">
 
+          <!-- 車両名（直接入力 ＋ プルダウンピック） -->
           <div class="form-group">
             <label>車両名 (vehicle)</label>
-            <input type="text" id="v_vehicle" placeholder="例: 103系, E259系, E233系3000" required>
+            <input type="text" id="v_vehicle" placeholder="例: 103系, E233系3000, E259系" required>
+            
+            <div class="picker-row">
+              <select id="presetVehicleSelect">
+                <option value="">-- 標準車両名一覧から選択 --</option>
+                <option value="103系">103系</option>
+                <option value="E001系">E001系 (TRAIN SUITE 四季島)</option>
+                <option value="E233系3000">E233系3000</option>
+                <option value="E259系">E259系</option>
+                <option value="281系">281系 (はるか)</option>
+                <option value="HC85系">HC85系 (ひだ/南紀)</option>
+                <option value="5050系4000">5050系4000</option>
+                <option value="5050系Hikarie">5050系Hikarie号</option>
+              </select>
+              <button type="button" class="btn btn-secondary" onclick="applySelectedVehicle()">セット</button>
+            </div>
           </div>
 
           <!-- 種別画像候補プルダウンピック -->
           <div class="form-group">
-            <label>種別画像候補 (candidates: 型非依存の共通キー)</label>
-            <input type="text" id="v_candidates" placeholder="例: 特急成田エクスプレス15号, オレンジ快速.単体大" required>
+            <label>種別画像候補 (candidates: 共通キー)</label>
+            <input type="text" id="v_candidates" placeholder="例: オレンジ快速.単体大, 緑普通.宇都宮" required>
             
-            <div class="candidate-selector-row">
+            <div class="picker-row">
               <select id="presetCandidateSelect">
                 <option value="">-- 全駅型共通の種別キーワード一覧から選択 --</option>
-                <option value="特急成田エクスプレス15号">特急成田エクスプレス15号</option>
                 <option value="オレンジ快速.単体大">オレンジ快速.単体大</option>
                 <option value="オレンジ快速.宇都宮">オレンジ快速.宇都宮</option>
                 <option value="オレンジ快速.高崎">オレンジ快速.高崎</option>
@@ -372,13 +389,13 @@
                 <option value="Hikarei専用快速急行">Hikarei専用快速急行</option>
                 <option value="特急単体大">特急単体大</option>
               </select>
-              <button type="button" class="btn btn-secondary" onclick="addSelectedPreset()">➕ プルダウンから追加</button>
+              <button type="button" class="btn btn-secondary" onclick="addSelectedCandidate()">➕ 追加</button>
             </div>
           </div>
 
-          <!-- 下部備考テロップ入力 ＋ Word風書式ツールバー -->
+          <!-- 下部備考テロップ入力 ＋ 改行対応 ＋ Word風書式ツールバー -->
           <div class="form-group">
-            <label>下部案内テロップ文 (remark)</label>
+            <label>下部案内テロップ文 (remark: 改行対応)</label>
 
             <!-- 書式ツールバー -->
             <div class="toolbar">
@@ -391,10 +408,10 @@
               <button type="button" class="toolbar-btn" onclick="applyFormat('reset')">🔄 装飾リセット (§n)</button>
             </div>
 
-            <textarea id="v_remark" class="toolbar-textarea" rows="3" placeholder="例: §c#ffaa00§b【特急成田エクスプレス】§n 成田空港行きです。" oninput="updateLivePreview()" required></textarea>
+            <textarea id="v_remark" class="toolbar-textarea" rows="4" placeholder="例: §c#ffaa00§b【お知らせ】§n&#10;ここに改行を入れた文章を入力できます。" oninput="updateLivePreview()" required></textarea>
 
-            <!-- リアルタイム ライブプレビュー -->
-            <label style="margin-top: 8px;">📺 下部テロップ表示イメージ（リアルタイムプレビュー）:</label>
+            <!-- リアルタイム ライブプレビュー (改行対応) -->
+            <label style="margin-top: 8px;">📺 下部テロップ表示イメージ（改行対応ライブプレビュー）:</label>
             <div class="preview-box">
               <div class="preview-text" id="livePreview"></div>
             </div>
@@ -432,7 +449,7 @@
   </div>
 
   <script>
-    // 標準 `vehicle_catalog.json` 内データ（フォールバック用）
+    // 標準 `vehicle_catalog.json` 内データ（「成田エクスプレス15号」排除済み）
     const standardDefaultCatalog = [
       {
         "vehicle": "103系",
@@ -495,7 +512,14 @@
 
     let catalogList = [...standardDefaultCatalog];
 
-    function addSelectedPreset() {
+    function applySelectedVehicle() {
+      const select = document.getElementById("presetVehicleSelect");
+      if (select.value) {
+        document.getElementById("v_vehicle").value = select.value;
+      }
+    }
+
+    function addSelectedCandidate() {
       const select = document.getElementById("presetCandidateSelect");
       const val = select.value;
       if (!val) return;
@@ -509,7 +533,7 @@
       select.value = "";
     }
 
-    // § トークンのパース描画処理
+    // § トークンのパース描画処理（改行維持対応）
     function parseRemarkStyleTokens(text) {
       const segments = [];
       let currentColor = "";
@@ -626,9 +650,7 @@
           <div class="item-info">
             <div class="item-title">🚆 ${item.vehicle}</div>
             <div class="item-tags">${tagsHtml}</div>
-            <div style="font-size:12px; color:#a8b4c2; margin-top:6px;">
-              <b>テロップ:</b> ${item.remark || "(なし)"}
-            </div>
+            <div style="font-size:12px; color:#a8b4c2; margin-top:6px; white-space: pre-wrap;"><b>テロップ:</b> ${item.remark || "(なし)"}</div>
           </div>
           <div style="display:flex; gap:6px;">
             <button class="btn btn-secondary" onclick="editItem(${index})">✏️ 編集</button>
@@ -646,7 +668,7 @@
       const editIdx = parseInt(document.getElementById("editIndex").value, 10);
       const vehicle = document.getElementById("v_vehicle").value.trim();
       const candidatesRaw = document.getElementById("v_candidates").value.trim();
-      const remark = document.getElementById("v_remark").value.trim();
+      const remark = document.getElementById("v_remark").value;
 
       const candidates = candidatesRaw.split(",").map(s => s.trim()).filter(Boolean);
 
