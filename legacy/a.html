@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>発車標シミュレーター</title>
+  <style>
+    body { background: black; color: yellow; font-family: monospace; text-align: center; }
+    .board { border: 2px solid yellow; display: inline-block; padding: 20px; }
+    .train { margin: 10px 0; font-size: 24px; }
+    button { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="board">
+    <div id="time"></div>
+    <div class="train" id="train1"></div>
+    <div class="train" id="train2"></div>
+    <button onclick="nextTrain()">次の列車を表示</button>
+  </div>
+
+  <div id="displayBoard"></div>
+  <div id="inputForm"></div>
+  <div id="telop"></div>
+  <!-- 必要に応じて他の表示部も追加 -->
+  <script src="main.js"></script>
+
+  <script>
+    const timetable = [
+      { time: "12:30", destination: "東京", type: "快速" },
+      { time: "12:45", destination: "横浜", type: "普通" },
+      { time: "13:00", destination: "熱海", type: "特急" }
+    ];
+
+    let index = 0;
+
+    function updateBoard() {
+      document.getElementById("time").textContent =
+        "現在時刻: " + new Date().toLocaleTimeString();
+
+      document.getElementById("train1").textContent =
+        `${timetable[index].time} ${timetable[index].destination}行き (${timetable[index].type})`;
+
+      const nextIndex = (index + 1) % timetable.length;
+      document.getElementById("train2").textContent =
+        `${timetable[nextIndex].time} ${timetable[nextIndex].destination}行き (${timetable[nextIndex].type})`;
+    }
+
+    function nextTrain() {
+      index = (index + 1) % timetable.length;
+      updateBoard();
+    }
+
+    setInterval(updateBoard, 1000);
+    updateBoard();
+  </script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+# 一時ファイル・キャッシュ
+~$*
+*.tmp
+Temp/
+.vscode/
+
+# Python関連（ローカル作業用キャッシュ）
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# OS固有の不要ファイル
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# PowerPoint・作業用大容量バイナリ（Web公開に不要な場合）
+*.pptx
+*.pptm
+*.pdf

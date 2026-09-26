@@ -1,0 +1,12 @@
+列車,station,number,arriveTime,departTime,events
+渋1,渋谷,TY01,05:00,05:00,"[{\"type\": \"other\", \"label\": \"始発\", \"description\": \"当列車は渋谷始発です\"}]"
+渋1,代官山,TY02,05:03,05:03,
+渋1,中目黒,TY03,05:05,05:05,"[{\"type\": \"connection\", \"label\": \"接続\", \"description\": \"東横線→目黒線への接続あり\"}]"
+渋1,武蔵小杉,TY04,05:20,05:21,"[{\"type\": \"wait\", \"label\": \"待ち合せ\", \"relatedTrain\": \"渋5\", \"description\": \"優等列車の通過待ち\"}]"
+
+# 使い方:
+# - 列車: 列車ID (例: 渋1)
+# - station: 駅名
+# - number: 駅番号（任意）
+# - arriveTime / departTime: HH:MM 形式
+# - events: JSON配列（省略可）

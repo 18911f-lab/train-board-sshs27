@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "kind": "train-board-schedule",
+  "stationId": "01",
+  "tracks": [
+    {
+      "trackNo": 1,
+      "events": [
+        { "id": "1-1015", "time": "10:15", "vehicle": "E233系3000" },
+        { "id": "1-1032", "time": "10:32", "vehicle": "E259系" }
+      ]
+    },
+    {
+      "trackNo": 2,
+      "events": [
+        { "id": "2-1020", "time": "10:20", "vehicle": "5050系4000" }
+      ]
+    },
+    { "trackNo": 3, "events": [] },
+    { "trackNo": 4, "events": [] }
+  ]
+}

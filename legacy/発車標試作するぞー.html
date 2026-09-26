@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>発車標 自作テスト</title>
+<style>
+  body { background:#111; color:white; text-align:center; }
+  .hassyahyo {
+    position: relative;
+    width: 3345px;
+    height: 200px;
+    margin: 50px auto;
+    background-image: url('背景-渋谷3.湘南新宿ライン.png');
+    background-size: cover;
+    border: 4px solid #333;
+  }
+  .type, .dest, .time, .remark {
+    position: absolute;
+  }
+  .type { left: 40px; top: 60px; }
+  .dest { left: 200px; top: 60px; }
+  .time { right: 80px; top: 60px; }
+  .remark { bottom: 10px; left: 50px; font-size: 20px; color: #0f0; }
+</style>
+</head>
+<body>
+
+<h2>🚉 発車標 自作テスト</h2>
+
+<div class="hassyahyo">
+  <img src="種別-グレー普通.高崎.png" class="type" height="80">
+  <img src="行先-JU高崎12新前橋.png" class="dest" height="80">
+  <img src="時刻-1.png" class="time" height="80">
+  <div class="remark">グリーン車は1〜5号車です</div>
+</div>
+
+</body>
+</html>

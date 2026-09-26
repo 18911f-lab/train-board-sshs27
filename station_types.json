@@ -1,0 +1,164 @@
+[
+  {
+    "id": "01",
+    "name": "渋谷南改札型",
+    "seriesName": "渋谷南改札口型",
+    "assetDir": "img/渋谷南改札口型",
+    "panels": {
+      "upper": {
+        "name": "1・2番線",
+        "widthCm": 33.64,
+        "heightCm": 8.45,
+        "backgrounds": {
+          "live": "img/渋谷南改札口型/背景-シリーズ/背景-渋谷南改札口型-専用12番線-実況.png",
+          "schedule": "img/渋谷南改札口型/背景-シリーズ/背景-渋谷南改札口型-専用12番線-予定.png",
+          "default": "img/渋谷南改札口型/背景-シリーズ/背景-渋谷南改札口型-専用12番線-実況.png"
+        }
+      },
+      "lower": {
+        "name": "3・4番線",
+        "widthCm": 33.64,
+        "heightCm": 8.45,
+        "backgrounds": {
+          "live": "img/渋谷南改札口型/背景-シリーズ/背景-渋谷南改札口型-専用34番線-実況.png",
+          "schedule": "img/渋谷南改札口型/背景-シリーズ/背景-渋谷南改札口型-専用34番線-予定.png",
+          "default": "img/渋谷南改札口型/背景-シリーズ/背景-渋谷南改札口型-専用34番線-実況.png"
+        }
+      }
+    },
+    "defaultSizes": {
+      "status": {
+        "widthCm": 3.2,
+        "heightCm": 0.8
+      },
+      "type": {
+        "widthCm": 3.0,
+        "heightCm": 1.15
+      },
+      "vehicle": {
+        "jp": { "heightCm": 0.8 },
+        "en": { "heightCm": 0.7 }
+      },
+      "remark": {
+        "widthCm": 18.25,
+        "heightCm": 0.8
+      },
+      "timeDigit": {
+        "widthCm": 0.56,
+        "heightCm": 0.8
+      }
+    },
+    "tracks": [
+      {
+        "trackNo": 1,
+        "panel": "upper",
+        "positions": {
+          "status": { "x": 17.06, "y": 2.15 },
+          "type": { "x": 12.05, "y": 2.05 },
+          "vehicle": {
+            "jp": { "x": 2.54, "y": 2.17 },
+            "en": { "x": 2.54, "y": 2.27 }
+          },
+          "remark": { "x": 1.51, "y": 3.67, "widthCm": 18.25, "heightCm": 0.8 },
+          "timeDigits": {
+            "h1":    { "x": 16.61, "y": 2.15, "widthCm": 0.56, "heightCm": 0.8 },
+            "h2":    { "x": 17.32, "y": 2.15, "widthCm": 0.56, "heightCm": 0.8 },
+            "colon": { "x": 18.00, "y": 2.29, "widthCm": 0.12, "heightCm": 0.52 },
+            "m1":    { "x": 18.27, "y": 2.15, "widthCm": 0.56, "heightCm": 0.8 },
+            "m2":    { "x": 18.96, "y": 2.15, "widthCm": 0.56, "heightCm": 0.8 }
+          }
+        }
+      },
+      {
+        "trackNo": 2,
+        "panel": "upper",
+        "positions": {
+          "status": { "x": 17.06, "y": 5.17 },
+          "type": { "x": 12.05, "y": 5.07 },
+          "vehicle": {
+            "jp": { "x": 2.54, "y": 5.20 },
+            "en": { "x": 2.54, "y": 5.30 }
+          },
+          "remark": { "x": 1.51, "y": 6.73, "widthCm": 18.25, "heightCm": 0.8 },
+          "timeDigits": {
+            "h1":    { "x": 16.61, "y": 5.17, "widthCm": 0.56, "heightCm": 0.8 },
+            "h2":    { "x": 17.32, "y": 5.17, "widthCm": 0.56, "heightCm": 0.8 },
+            "colon": { "x": 18.00, "y": 5.31, "widthCm": 0.12, "heightCm": 0.52 },
+            "m1":    { "x": 18.27, "y": 5.17, "widthCm": 0.56, "heightCm": 0.8 },
+            "m2":    { "x": 18.96, "y": 5.17, "widthCm": 0.56, "heightCm": 0.8 }
+          }
+        }
+      },
+      {
+        "trackNo": 3,
+        "panel": "lower",
+        "positions": {
+          "status": { "x": 29.43, "y": 2.15 },
+          "type": { "x": 24.43, "y": 2.05 },
+          "vehicle": {
+            "jp": { "x": 14.90, "y": 2.17 },
+            "en": { "x": 14.90, "y": 2.27 }
+          },
+          "remark": { "x": 13.88, "y": 3.67, "widthCm": 18.25, "heightCm": 0.8 },
+          "timeDigits": {
+            "h1":    { "x": 28.98, "y": 2.15, "widthCm": 0.56, "heightCm": 0.8 },
+            "h2":    { "x": 29.69, "y": 2.15, "widthCm": 0.56, "heightCm": 0.8 },
+            "colon": { "x": 30.37, "y": 2.29, "widthCm": 0.12, "heightCm": 0.52 },
+            "m1":    { "x": 30.64, "y": 2.15, "widthCm": 0.56, "heightCm": 0.8 },
+            "m2":    { "x": 31.33, "y": 2.15, "widthCm": 0.56, "heightCm": 0.8 }
+          }
+        }
+      },
+      {
+        "trackNo": 4,
+        "panel": "lower",
+        "positions": {
+          "status": { "x": 29.43, "y": 5.17 },
+          "type": { "x": 24.43, "y": 5.07 },
+          "vehicle": {
+            "jp": { "x": 14.90, "y": 5.20 },
+            "en": { "x": 14.90, "y": 5.30 }
+          },
+          "remark": { "x": 13.88, "y": 6.73, "widthCm": 18.25, "heightCm": 0.8 },
+          "timeDigits": {
+            "h1":    { "x": 28.98, "y": 5.17, "widthCm": 0.56, "heightCm": 0.8 },
+            "h2":    { "x": 29.69, "y": 5.17, "widthCm": 0.56, "heightCm": 0.8 },
+            "colon": { "x": 30.37, "y": 5.31, "widthCm": 0.12, "heightCm": 0.52 },
+            "m1":    { "x": 30.64, "y": 5.17, "widthCm": 0.56, "heightCm": 0.8 },
+            "m2":    { "x": 31.33, "y": 5.17, "widthCm": 0.56, "heightCm": 0.8 }
+          }
+        }
+      }
+    ],
+    "specialOverrides": {
+      "typeRules": [
+        {
+          "pattern": "E001専用四季島",
+          "size": { "widthCm": 4.0, "heightCm": 1.25 },
+          "offsetY": -0.03,
+          "trackPositions": {
+            "1": { "x": 12.05, "y": 1.93 },
+            "2": { "x": 12.05, "y": 4.99 },
+            "3": { "x": 24.43, "y": 1.93 },
+            "4": { "x": 24.43, "y": 4.99 }
+          }
+        },
+        {
+          "pattern": "単体大",
+          "size": { "widthCm": 4.0, "heightCm": 1.0 },
+          "offsetY": 0.0
+        },
+        {
+          "pattern": "専用急行",
+          "size": { "widthCm": 4.0, "heightCm": 1.0 },
+          "offsetY": 0.0
+        },
+        {
+          "pattern": "専用快速急行",
+          "size": { "widthCm": 4.0, "heightCm": 1.0 },
+          "offsetY": 0.0
+        }
+      ]
+    }
+  }
+]
