@@ -913,12 +913,72 @@
     modeToggleRow.appendChild(liveModeBtn);
     modeToggleRow.appendChild(scheduleModeBtn);
 
+    const catalogFileInput = document.createElement("input");
+    catalogFileInput.type = "file";
+    catalogFileInput.accept = ".json,application/json";
+    catalogFileInput.hidden = true;
+
+    const catalogLoadButton = document.createElement("button");
+    catalogLoadButton.type = "button";
+    catalogLoadButton.className = "reset-button";
+    catalogLoadButton.style.background = "#1f6feb";
+    catalogLoadButton.style.borderColor = "#388bfd";
+    catalogLoadButton.style.marginTop = "6px";
+    catalogLoadButton.textContent = "📂 車両カタログ読込 (JSON)";
+    catalogLoadButton.addEventListener("click", () => catalogFileInput.click());
+    catalogFileInput.addEventListener("change", () => loadCatalogFile(catalogFileInput.files?.[0]));
+
+    const loadCatalogFile = async (file) => {
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          alert("有効な車両カタログJSON（配列データ）ではありません。");
+          return;
+        }
+
+        vehicleCatalog.length = 0;
+        vehicleList.length = 0;
+
+        parsed.forEach((item) => {
+          vehicleCatalog.push(item);
+          if (item.vehicle) vehicleList.push(item.vehicle);
+        });
+
+        trackSelects.forEach((selectEl, trackNo) => {
+          selectEl.innerHTML = "";
+          vehicleList.forEach((name) => {
+            const option = document.createElement("option");
+            option.value = name;
+            option.textContent = name;
+            selectEl.appendChild(option);
+          });
+          if (vehicleList.length > 0) {
+            const current = trackState[trackNo]?.vehicle;
+            const nextVal = vehicleList.includes(current) ? current : vehicleList[0];
+            selectEl.value = nextVal;
+            applyVehicleToTrack(trackNo, nextVal, { render: false });
+          }
+        });
+
+        renderAllSprites();
+        alert(`車両カタログ (${file.name}) を正常に読み込みました！（${vehicleList.length}件）`);
+      } catch (err) {
+        alert("車両カタログJSONの読み込みに失敗しました: " + err.message);
+      } finally {
+        catalogFileInput.value = "";
+      }
+    };
+
     globalControls.appendChild(modeToggleRow);
     globalControls.appendChild(scheduleControls);
     globalControls.appendChild(jpRow);
     globalControls.appendChild(enRow);
     globalControls.appendChild(remarkRow);
     globalControls.appendChild(resetButton);
+    globalControls.appendChild(catalogFileInput);
+    globalControls.appendChild(catalogLoadButton);
 
     const trackList = [1, 2, 3, 4];
     const vehicleCatalog = [];
