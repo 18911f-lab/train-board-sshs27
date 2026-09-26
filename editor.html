@@ -360,7 +360,7 @@
 
   <div class="notice">
     💡 <b>操作ガイド</b>:<br>
-    ・車両名および種別候補はプルダウンから直感的に選んで追加できます。<br>
+    ・車両名および種別候補はプルダウンから追加できます。<br>
     ・下部案内テロップは改行（Enterキー）に対応しており、範囲選択してWord感覚で太字・文字色・点滅などの装飾が適用できます。
   </div>
 
@@ -368,7 +368,7 @@
     <!-- 車両登録フォーム -->
     <div>
       <div class="card">
-        <h2 id="formTitle">➕ 車両カタログデータの追加 / 編集</h2>
+        <h2 id="formTitle"> 車両カタログデータの追加 / 編集</h2>
         <form id="vehicleForm" onsubmit="saveVehicle(event)">
           <input type="hidden" id="editIndex" value="-1">
 
@@ -383,15 +383,9 @@
                 <option value="5050系4000">5050系4000</option>
                 <option value="5050系Hikarie">5050系Hikarie</option>
                 <option value="E001系">E001系 (TRAIN SUITE 四季島)</option>
-                <option value="E231系">E231系</option>
-                <option value="E233系3000">E233系3000</option>
                 <option value="E235系1000">E235系1000</option>
                 <option value="E259系">E259系</option>
-                <option value="キハ85系">キハ85系</option>
                 <option value="HC85系">HC85系</option>
-                <option value="209系">209系</option>
-                <option value="E257系">E257系</option>
-                <option value="185系">185系</option>
                 <option value="__custom__">✏️ 自由入力（リストにない車種名）</option>
               </select>
             </div>
@@ -444,7 +438,7 @@
             <!-- 書式ツールバー -->
             <div class="toolbar">
               <button type="button" class="toolbar-btn" onclick="applyFormat('bold')"><b>B</b> 太字 (§b)</button>
-              <button type="button" class="toolbar-btn" onclick="applyFormat('blink')">⚡ 点滅 (§f)</button>
+              <button type="button" class="toolbar-btn" onclick="applyFormat('blink')">点滅 (§f)</button>
               <div class="color-picker-wrapper">
                 <span style="font-size:11px; color:#fff;">🎨 文字色:</span>
                 <input type="color" id="textColorPicker" value="#ffaa00" onchange="applyColor(this.value)">
@@ -452,8 +446,7 @@
               <button type="button" class="toolbar-btn" onclick="applyFormat('reset')">🔄 装飾リセット (§n)</button>
             </div>
 
-            <textarea id="v_remark" class="toolbar-textarea" rows="4" placeholder="例: §c#ffaa00§b【新案内】§n 改行を含む長文テロップを
-入力できます。" oninput="updateLivePreview()" required></textarea>
+            <textarea id="v_remark" class="toolbar-textarea" rows="4" placeholder="例: §c#ffaa00§b §n 改行を含む長文テロップを入力できます。スクロール時間の関係上、本文200文字程度を推奨します。" oninput="updateLivePreview()" required></textarea>
 
             <!-- リアルタイム ライブプレビュー (改行表示) -->
             <label style="margin-top: 8px;">📺 下部テロップ表示イメージ（リアルタイムプレビュー）:</label>
