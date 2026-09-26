@@ -619,6 +619,16 @@
     panelHeaderRow.appendChild(panelCloseBtn);
     controlPanel.appendChild(panelHeaderRow);
 
+    // 管理画面 (editor.html) を別タブで開くリンクボタンの追加
+    const editorLinkBtn = document.createElement("a");
+    editorLinkBtn.href = "editor.html";
+    editorLinkBtn.target = "_blank";
+    editorLinkBtn.style.cssText = "display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 10px; margin: 4px 0 8px 0; background: #238636; border: 1px solid #2ea043; border-radius: 4px; color: #ffffff; text-decoration: none; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; transition: background 0.2s;";
+    editorLinkBtn.innerHTML = "⚙️ データ管理・JSON生成 (別タブ)";
+    editorLinkBtn.onmouseover = () => editorLinkBtn.style.background = "#2ea043";
+    editorLinkBtn.onmouseout = () => editorLinkBtn.style.background = "#238636";
+    controlPanel.appendChild(editorLinkBtn);
+
     const globalVariantState = {
       currentVariant: "en",
       currentMode: "live", // "live" (実況) または "schedule" (予定)
