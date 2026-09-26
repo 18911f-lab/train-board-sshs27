@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nゲージ 運行管理データ＆JSON生成ツール</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@500;700&display=swap');
+
+    :root {
+      --bg-color: #0d1117;
+      --panel-bg: #161b22;
+      --panel-border: #30363d;
+      --primary-color: #238636;
+      --primary-hover: #2ea043;
+      --accent-color: #58a6ff;
+      --danger-color: #da3633;
+      --text-main: #c9d1d9;
+      --text-muted: #8b949e;
+      --input-bg: #0d1117;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 24px;
+      line-height: 1.5;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 16px 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      color: var(--accent-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-links {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-nav {
+      padding: 8px 14px;
+      background: var(--panel-border);
+      color: var(--text-main);
+      border: none;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-nav:hover {
+      background: #484f58;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--panel-border);
+      padding-bottom: 10px;
+    }
+
+    .tab-btn {
+      padding: 10px 20px;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      color: var(--text-muted);
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: var(--accent-color);
+      color: #fff;
+      border-color: var(--accent-color);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 992px) {
+      .grid-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+
+    .card h2 {
+      font-size: 16px;
+      color: #fff;
+      margin-bottom: 16px;
+      border-left: 4px solid var(--accent-color);
+      padding-left: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    input[type="text"], textarea, select {
+      width: 100%;
+      padding: 8px 12px;
+      background: var(--input-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 6px;
+      color: var(--text-main);
+      font-size: 13px;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-color);
+    }
+
+    .form-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .form-row .form-group {
+      flex: 1;
+    }
+
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--primary-color);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-danger {
+      background: var(--danger-color);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: #21262d;
+      border: 1px solid var(--panel-border);
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover {
+      background: #30363d;
+    }
+
+    .item-list {
+      max-height: 500px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .item-card {
+      background: #0d1117;
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .item-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .item-title {
+      font-weight: bold;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .item-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .json-preview {
+      width: 100%;
+      height: 240px;
+      background: #000;
+      border: 1px solid var(--panel-border);
+      border-radius: 6px;
+      color: #7ee787;
+      font-family: monospace;
+      padding: 12px;
+      font-size: 12px;
+      resize: vertical;
+    }
+
+    .action-bar {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .notice {
+      background: rgba(88, 166, 255, 0.1);
+      border: 1px solid var(--accent-color);
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>⚙️ Nゲージ 運行データ＆JSONビルダー (管理画面)</h1>
+    <div class="header-links">
+      <a href="index.html" class="btn-nav">🚆 本体ディスプレイを表示</a>
+    </div>
+  </header>
+
+  <div class="notice">
+    💡 <b>初心者ガイド</b>: ここで車両や時刻表のデータを登録・編集して「JSONダウンロード」ボタンを押すことで、簡単に設定JSONファイルを自動生成できます。<br>
+    保存した設定は本体ディスプレイ (`index.html`) に即時同期されるほか、ファイルとして後から読み込むことも可能です。
+  </div>
+
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('vehicles')">🚆 1. 車両マスター管理 (TRAIN_MASTER)</button>
+    <button class="tab-btn" onclick="switchTab('schedule')">⏰ 2. 時刻表・予定ダイヤ生成</button>
+    <button class="tab-btn" onclick="switchTab('io')">📁 3. JSON入出力・連携設定</button>
+  </div>
+
+  <!-- TAB 1: 車両マスター管理 -->
+  <div id="tab-vehicles" class="tab-content active">
+    <div class="grid-container">
+      <!-- フォーム -->
+      <div class="card">
+        <h2>新しい車両データを追加・編集</h2>
+        <form id="vehicleForm" onsubmit="saveVehicle(event)">
+          <div class="form-group">
+            <label>車両表示名 (キー名)</label>
+            <input type="text" id="v_name" placeholder="例: 成田エクスプレス (E259系)" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>種別画像キー (type_key)</label>
+              <input type="text" id="v_type_key" placeholder="例: 特急成田エクスプレス15号" required>
+            </div>
+            <div class="form-group">
+              <label>種別表示文字 (type_text)</label>
+              <input type="text" id="v_type_text" placeholder="例: 特急 成田EXP" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>行先画像キー (dest_key)</label>
+              <input type="text" id="v_dest_key" placeholder="例: JO37成田空港" required>
+            </div>
+            <div class="form-group">
+              <label>行先表示文字 (dest_text)</label>
+              <input type="text" id="v_dest_text" placeholder="例: 成田空港" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>両数画像キー (cars_key)</label>
+              <input type="text" id="v_cars_key" placeholder="例: 6両" required>
+            </div>
+            <div class="form-group">
+              <label>両数表示文字 (cars_text)</label>
+              <input type="text" id="v_cars_text" placeholder="例: 6両" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>案内スクロールテロップ文章 (desc)</label>
+            <textarea id="v_desc" rows="3" placeholder="例: 特急成田エクスプレス（E259系）が走行中です。成田空港行きです。" required></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-primary">➕ 車両マスターに追加・更新</button>
+        </form>
+      </div>
+
+      <!-- リスト -->
+      <div class="card">
+        <h2>登録済み車両マスター一覧</h2>
+        <div class="item-list" id="vehicleList">
+          <!-- JSで動的レンダリング -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: 時刻表・予定ダイヤ生成 -->
+  <div id="tab-schedule" class="tab-content">
+    <div class="grid-container">
+      <div class="card">
+        <h2>予定ダイヤ追加 (時刻表モード用)</h2>
+        <form id="scheduleForm" onsubmit="addScheduleItem(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label>番線</label>
+              <select id="s_track">
+                <option value="1">1番線</option>
+                <option value="2">2番線</option>
+                <option value="3">3番線</option>
+                <option value="4">4番線</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>発車予定時刻</label>
+              <input type="text" id="s_time" placeholder="例: 14:25" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>対象車両 (車両マスターより選択)</label>
+            <select id="s_train_select" required>
+              <!-- 動的生成 -->
+            </select>
+          </div>
+
+          <button type="submit" class="btn btn-primary">➕ 時刻表リストに追加</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>作成中の時刻表データ一覧</h2>
+        <div class="item-list" id="scheduleList">
+          <!-- 動的生成 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: JSON入出力・連携設定 -->
+  <div id="tab-io" class="tab-content">
+    <div class="card" style="margin-bottom: 20px;">
+      <h2>📁 車両マスター (TRAIN_MASTER) JSON 出力 / 入力</h2>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px;">
+        現在作成された車両マスターのJSONプレビューです。ファイルとして保存したり、既存のJSONをインポートできます。
+      </p>
+      <textarea id="vehicleJsonPreview" class="json-preview" readonly></textarea>
+      <div class="action-bar">
+        <button class="btn btn-primary" onclick="downloadJson(vehicleMaster, 'train_master.json')">💾 車両JSONをダウンロード</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('importVehicleFile').click()">📂 JSONファイルを読み込む</button>
+        <input type="file" id="importVehicleFile" style="display:none" accept=".json" onchange="importVehicleJson(event)">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📁 時刻表 (SCHEDULE) JSON 出力 / 入力</h2>
+      <textarea id="scheduleJsonPreview" class="json-preview" readonly></textarea>
+      <div class="action-bar">
+        <button class="btn btn-primary" onclick="downloadJson(scheduleItems, 'schedule_data.json')">💾 時刻表JSONをダウンロード</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('importScheduleFile').click()">📂 時刻表JSONを読み込む</button>
+        <input type="file" id="importScheduleFile" style="display:none" accept=".json" onchange="importScheduleJson(event)">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // デフォルトの車両マスターデータ
+    let vehicleMaster = JSON.parse(localStorage.getItem("custom_train_master")) || {
+      "成田エクスプレス (E259系)": {
+        type_key: "特急成田エクスプレス15号",
+        type_text: "特急 成田EXP",
+        dest_key: "JO37成田空港",
+        dest_text: "成田空港",
+        cars_key: "6両",
+        cars_text: "6両",
+        desc: "特急成田エクスプレス（E259系）が走行中です。成田空港行きです。"
+      },
+      "東海道線 快速アクティー (E231系)": {
+        type_key: "オレンジ快速アクティー.単体大",
+        type_text: "快速アクティー",
+        dest_key: "JT21熱海",
+        dest_text: "熱海",
+        cars_key: "15両",
+        cars_text: "15両",
+        desc: "東海道線 快速アクティー（熱海行き）です。グリーン車連結の15両編成です。"
+      },
+      "宇都宮線 普通 (E233系)": {
+        type_key: "緑普通.宇都宮",
+        type_text: "普通",
+        dest_key: "JU宇都宮07宇都宮",
+        dest_text: "宇都宮",
+        cars_key: "10両",
+        cars_text: "10両",
+        desc: "宇都宮線 普通 宇都宮行きです。近郊型10両編成で運行中です。"
+      }
+    };
+
+    let scheduleItems = JSON.parse(localStorage.getItem("custom_schedule_data")) || [
+      { track: 1, time: "14:25", train: "成田エクスプレス (E259系)" },
+      { track: 2, time: "14:28", train: "東海道線 快速アクティー (E231系)" }
+    ];
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById('tab-' + tabName).classList.add('active');
+      
+      if(tabName === 'io') {
+        updateJsonPreviews();
+      }
+    }
+
+    function renderVehicles() {
+      const list = document.getElementById("vehicleList");
+      const select = document.getElementById("s_train_select");
+      list.innerHTML = "";
+      select.innerHTML = "";
+
+      Object.keys(vehicleMaster).forEach(key => {
+        const item = vehicleMaster[key];
+        
+        // リスト描画
+        const div = document.createElement("div");
+        div.className = "item-card";
+        div.innerHTML = `
+          <div class="item-info">
+            <div class="item-title">${key}</div>
+            <div class="item-sub">種別: ${item.type_text} | 行先: ${item.dest_text} | 両数: ${item.cars_text}</div>
+          </div>
+          <div>
+            <button class="btn btn-secondary" onclick="editVehicle('${key}')">✏️ 編集</button>
+            <button class="btn btn-danger" onclick="deleteVehicle('${key}')">🗑️ 削除</button>
+          </div>
+        `;
+        list.appendChild(div);
+
+        // 時刻表用セレクトオプション
+        const opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = key;
+        select.appendChild(opt);
+      });
+
+      // ローカルストレージに保存
+      localStorage.setItem("custom_train_master", JSON.stringify(vehicleMaster));
+      updateJsonPreviews();
+    }
+
+    function saveVehicle(e) {
+      e.preventDefault();
+      const name = document.getElementById("v_name").value.trim();
+      if (!name) return;
+
+      vehicleMaster[name] = {
+        type_key: document.getElementById("v_type_key").value.trim(),
+        type_text: document.getElementById("v_type_text").value.trim(),
+        dest_key: document.getElementById("v_dest_key").value.trim(),
+        dest_text: document.getElementById("v_dest_text").value.trim(),
+        cars_key: document.getElementById("v_cars_key").value.trim(),
+        cars_text: document.getElementById("v_cars_text").value.trim(),
+        desc: document.getElementById("v_desc").value.trim()
+      };
+
+      document.getElementById("vehicleForm").reset();
+      renderVehicles();
+      alert(`「${name}」を車両マスターに保存しました。`);
+    }
+
+    function editVehicle(key) {
+      const item = vehicleMaster[key];
+      if (!item) return;
+      document.getElementById("v_name").value = key;
+      document.getElementById("v_type_key").value = item.type_key || "";
+      document.getElementById("v_type_text").value = item.type_text || "";
+      document.getElementById("v_dest_key").value = item.dest_key || "";
+      document.getElementById("v_dest_text").value = item.dest_text || "";
+      document.getElementById("v_cars_key").value = item.cars_key || "";
+      document.getElementById("v_cars_text").value = item.cars_text || "";
+      document.getElementById("v_desc").value = item.desc || "";
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function deleteVehicle(key) {
+      if (confirm(`「${key}」を削除してもよろしいですか？`)) {
+        delete vehicleMaster[key];
+        renderVehicles();
+      }
+    }
+
+    function renderSchedule() {
+      const list = document.getElementById("scheduleList");
+      list.innerHTML = "";
+      scheduleItems.forEach((item, index) => {
+        const div = document.createElement("div");
+        div.className = "item-card";
+        div.innerHTML = `
+          <div class="item-info">
+            <div class="item-title">${item.track}番線 - ${item.time}発</div>
+            <div class="item-sub">${item.train}</div>
+          </div>
+          <button class="btn btn-danger" onclick="deleteScheduleItem(${index})">🗑️ 削除</button>
+        `;
+        list.appendChild(div);
+      });
+      localStorage.setItem("custom_schedule_data", JSON.stringify(scheduleItems));
+      updateJsonPreviews();
+    }
+
+    function addScheduleItem(e) {
+      e.preventDefault();
+      const track = document.getElementById("s_track").value;
+      const time = document.getElementById("s_time").value.trim();
+      const train = document.getElementById("s_train_select").value;
+
+      scheduleItems.push({ track: Number(track), time, train });
+      renderSchedule();
+      document.getElementById("s_time").value = "";
+    }
+
+    function deleteScheduleItem(index) {
+      scheduleItems.splice(index, 1);
+      renderSchedule();
+    }
+
+    function updateJsonPreviews() {
+      document.getElementById("vehicleJsonPreview").value = JSON.stringify(vehicleMaster, null, 2);
+      document.getElementById("scheduleJsonPreview").value = JSON.stringify(scheduleItems, null, 2);
+    }
+
+    function downloadJson(data, filename) {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importVehicleJson(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const parsed = JSON.parse(evt.target.result);
+          vehicleMaster = parsed;
+          renderVehicles();
+          alert("車両マスターJSONの読み込みに成功しました！");
+        } catch (err) {
+          alert("JSONの読み込みに失敗しました。フォーマットを確認してください。");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function importScheduleJson(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const parsed = JSON.parse(evt.target.result);
+          scheduleItems = parsed;
+          renderSchedule();
+          alert("時刻表JSONの読み込みに成功しました！");
+        } catch (err) {
+          alert("JSONの読み込みに失敗しました。フォーマットを確認してください。");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // 初期化
+    renderVehicles();
+    renderSchedule();
+  </script>
+</body>
+</html>
