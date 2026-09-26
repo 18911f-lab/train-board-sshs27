@@ -122,7 +122,7 @@
       margin-bottom: 6px;
     }
 
-    input[type="text"], select, textarea {
+    select, textarea, input[type="text"] {
       width: 100%;
       padding: 9px 12px;
       background: var(--input-bg);
@@ -133,15 +133,51 @@
       font-family: inherit;
     }
 
-    input:focus, select:focus, textarea:focus {
+    select:focus, textarea:focus, input:focus {
       outline: none;
       border-color: var(--accent-color);
     }
 
-    .picker-row {
+    .candidate-selector-row {
       display: flex;
       gap: 8px;
       margin-top: 6px;
+    }
+
+    .selected-candidates-box {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      background: #0d1117;
+      border: 1px solid var(--panel-border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-top: 8px;
+      min-height: 42px;
+      align-items: center;
+    }
+
+    .candidate-chip {
+      background: #21262d;
+      border: 1px solid #484f58;
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 12px;
+      color: #c9d1d9;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .candidate-chip button {
+      background: none;
+      border: none;
+      color: #f85149;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 12px;
+      padding: 0;
+      line-height: 1;
     }
 
     /* Word風 書式ツールバー */
@@ -194,28 +230,28 @@
 
     textarea.toolbar-textarea {
       border-radius: 0 0 6px 6px;
-      white-space: pre-wrap; /* 改行の視認対応 */
+      white-space: pre-wrap; /* 改行対応 */
     }
 
-    /* テロップライブプレビュー (マルチライン/改行対応) */
+    /* テロップライブプレビュー */
     .preview-box {
       background: #000;
       border: 2px solid #30363d;
       border-radius: 6px;
       padding: 12px;
       margin-top: 8px;
-      min-height: 52px;
+      min-height: 48px;
       display: flex;
       align-items: center;
       overflow-x: auto;
     }
 
     .preview-text {
-      font-size: 15px;
+      white-space: pre-wrap; /* 改行対応 */
+      font-size: 16px;
       font-weight: 500;
       color: #fff;
       letter-spacing: 0.04em;
-      white-space: pre-wrap; /* 改行を画面にそのまま反映 */
       line-height: 1.4;
     }
 
@@ -244,7 +280,7 @@
     .btn-secondary:hover { background: #30363d; }
 
     .item-list {
-      max-height: 580px;
+      max-height: 560px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -323,9 +359,9 @@
   </header>
 
   <div class="notice">
-    💡 <b>更新情報</b>:<br>
-    ・車両名および種別候補は、便利なプルダウンから選んで簡単にセットできます。<br>
-    ・下部案内テロップは改行（Enter）に対応しています。Word風ツールバーで太字・文字色・点滅も自由自在です。
+    💡 <b>操作ガイド</b>:<br>
+    ・車両名および種別候補はプルダウンから直感的に選んで追加できます。<br>
+    ・下部案内テロップは改行（Enterキー）に対応しており、範囲選択してWord感覚で太字・文字色・点滅などの装飾が適用できます。
   </div>
 
   <div class="grid-container">
@@ -336,35 +372,38 @@
         <form id="vehicleForm" onsubmit="saveVehicle(event)">
           <input type="hidden" id="editIndex" value="-1">
 
-          <!-- 車両名（直接入力 ＋ プルダウンピック） -->
+          <!-- 車両名プルダウン選択 -->
           <div class="form-group">
             <label>車両名 (vehicle)</label>
-            <input type="text" id="v_vehicle" placeholder="例: 103系, E233系3000, E259系" required>
-            
-            <div class="picker-row">
-              <select id="presetVehicleSelect">
-                <option value="">-- 標準車両名一覧から選択 --</option>
+            <div style="display:flex; gap:8px;">
+              <select id="v_vehicle_select" onchange="handleVehicleSelect(this.value)">
+                <option value="">-- プルダウンから車両を選択 --</option>
                 <option value="103系">103系</option>
-                <option value="E001系">E001系 (TRAIN SUITE 四季島)</option>
-                <option value="E233系3000">E233系3000</option>
-                <option value="E259系">E259系</option>
-                <option value="281系">281系 (はるか)</option>
-                <option value="HC85系">HC85系 (ひだ/南紀)</option>
+                <option value="281系">281系</option>
                 <option value="5050系4000">5050系4000</option>
-                <option value="5050系Hikarie">5050系Hikarie号</option>
+                <option value="5050系Hikarie">5050系Hikarie</option>
+                <option value="E001系">E001系 (TRAIN SUITE 四季島)</option>
+                <option value="E231系">E231系</option>
+                <option value="E233系3000">E233系3000</option>
+                <option value="E235系1000">E235系1000</option>
+                <option value="E259系">E259系</option>
+                <option value="キハ85系">キハ85系</option>
+                <option value="HC85系">HC85系</option>
+                <option value="209系">209系</option>
+                <option value="E257系">E257系</option>
+                <option value="185系">185系</option>
+                <option value="__custom__">✏️ 自由入力（リストにない車種名）</option>
               </select>
-              <button type="button" class="btn btn-secondary" onclick="applySelectedVehicle()">セット</button>
             </div>
+            <input type="text" id="v_vehicle_custom" placeholder="車種名を入力してください" style="margin-top:6px; display:none;">
           </div>
 
-          <!-- 種別画像候補プルダウンピック -->
+          <!-- 種別画像候補プルダウンピック (手動テキスト行を削除) -->
           <div class="form-group">
-            <label>種別画像候補 (candidates: 共通キー)</label>
-            <input type="text" id="v_candidates" placeholder="例: オレンジ快速.単体大, 緑普通.宇都宮" required>
-            
-            <div class="picker-row">
+            <label>種別画像候補 (candidates)</label>
+            <div class="candidate-selector-row">
               <select id="presetCandidateSelect">
-                <option value="">-- 全駅型共通の種別キーワード一覧から選択 --</option>
+                <option value="">-- 種別キーワード一覧から選択して追加 --</option>
                 <option value="オレンジ快速.単体大">オレンジ快速.単体大</option>
                 <option value="オレンジ快速.宇都宮">オレンジ快速.宇都宮</option>
                 <option value="オレンジ快速.高崎">オレンジ快速.高崎</option>
@@ -389,13 +428,18 @@
                 <option value="Hikarei専用快速急行">Hikarei専用快速急行</option>
                 <option value="特急単体大">特急単体大</option>
               </select>
-              <button type="button" class="btn btn-secondary" onclick="addSelectedCandidate()">➕ 追加</button>
+              <button type="button" class="btn btn-secondary" onclick="addSelectedPreset()">➕ 追加</button>
+            </div>
+
+            <!-- 選択済み種別候補タグリスト -->
+            <div class="selected-candidates-box" id="selectedCandidatesBox">
+              <!-- JSでタグ生成 -->
             </div>
           </div>
 
-          <!-- 下部備考テロップ入力 ＋ 改行対応 ＋ Word風書式ツールバー -->
+          <!-- 下部備考テロップ入力 ＋ Word風書式ツールバー (改行対応) -->
           <div class="form-group">
-            <label>下部案内テロップ文 (remark: 改行対応)</label>
+            <label>下部案内テロップ文 (remark: 改行Enter可)</label>
 
             <!-- 書式ツールバー -->
             <div class="toolbar">
@@ -408,10 +452,11 @@
               <button type="button" class="toolbar-btn" onclick="applyFormat('reset')">🔄 装飾リセット (§n)</button>
             </div>
 
-            <textarea id="v_remark" class="toolbar-textarea" rows="4" placeholder="例: §c#ffaa00§b【お知らせ】§n&#10;ここに改行を入れた文章を入力できます。" oninput="updateLivePreview()" required></textarea>
+            <textarea id="v_remark" class="toolbar-textarea" rows="4" placeholder="例: §c#ffaa00§b【新案内】§n 改行を含む長文テロップを
+入力できます。" oninput="updateLivePreview()" required></textarea>
 
-            <!-- リアルタイム ライブプレビュー (改行対応) -->
-            <label style="margin-top: 8px;">📺 下部テロップ表示イメージ（改行対応ライブプレビュー）:</label>
+            <!-- リアルタイム ライブプレビュー (改行表示) -->
+            <label style="margin-top: 8px;">📺 下部テロップ表示イメージ（リアルタイムプレビュー）:</label>
             <div class="preview-box">
               <div class="preview-text" id="livePreview"></div>
             </div>
@@ -449,35 +494,27 @@
   </div>
 
   <script>
-    // 標準 `vehicle_catalog.json` 内データ（「成田エクスプレス15号」排除済み）
+    // 標準 `vehicle_catalog.json` 内データ（「成田エクスプレス15号」除去版）
     const standardDefaultCatalog = [
       {
         "vehicle": "103系",
-        "remark": "§f§b§c#ffff00【☆彡車両案内☆彡】§n 現在表示中の車両は§b§c#ff9900中央線快速 103系§nです。先代の§c#cccccc101系§nの後継として登場し、駅間距離が短い通勤路線に特化した§b§c#00ffff加速性能§nを重視した設計となっています。中央線を象徴する§b§c#ff4400「朱色1号」§nの鮮やかな単色塗りは、当時の§b§c#ffcc00『国電』§nの代名詞として沿線で広く親しまれました。唸りを上げるモーター音と共に過密ダイヤを捌き続けた、§b§c#ffff00高度経済成長期の立役者§n。首都圏の輸送を力強く支えた色褪せない§b§c#ffaaaa名車の走り§nをご覧ください！☆彡",
+        "remark": "§f§b§c#ffff00【☆彡車両案内☆彡】§n 現在表示中の車両は§b§c#ff9900中央線快速 103系§nです。\n先代の§c#cccccc101系§nの後継として登場し、駅間距離が短い通勤路線に特化した§b§c#00ffff加速性能§nを重視した設計となっています。",
         "candidates": ["オレンジ快速.単体大"]
       },
       {
         "vehicle": "E001系",
-        "remark": "§f§b§c#ffff00【☆彡車両案内☆彡】§n 現在表示中の車両はクルーズトレイン §b§c#b3ae92E001系「TRAIN SUITE 四季島」§nです。東日本各地の豊かな自然や文化を巡る、§b§c#ffff00上質な旅§nを提供するために誕生しました。風景に溶け込むような§b§c#b3ae92「四季島ゴールド」§nの専用塗装と、樹木を思わせる§c#00ffff特徴的な窓の配置§nが最大の魅力です。最新技術と伝統工芸が息づく§b§c#ff9900フラッグシップトレイン§n。§b§c#ffcc00優雅で非日常的なクルーズの旅路§nを、模型のレイアウト上でもぜひお楽しみください！☆彡",
+        "remark": "§f§b§c#ffff00【☆彡車両案内☆彡】§n 現在表示中の車両はクルーズトレイン §b§c#b3ae92E001系「TRAIN SUITE 四季島」§nです。\n東日本各地の豊かな自然や文化を巡る上質な旅を提供するために誕生しました。",
         "candidates": ["E001専用四季島"]
       },
       {
         "vehicle": "E233系3000",
-        "remark": "§f§b§c#ffff00【☆彡車両案内☆彡】§n 現在表示中の車両は近郊形電車 §b§c#ff8a17E233系3000番台§nです。§c#ff8a17東海道線§nをはじめ、§c#2c8a4f上野東京ライン§nなど首都圏の広範囲をカバーする大動脈の主力車両です。お馴染みの§b§c#ff8a17「オレンジ」§nと§b§c#2c8a4f「緑」§nによる§b§c#ff8a17伝統の§c#2c8a4f湘南色帯§nと、編成中間の§b§c#2c8a4f2階建てグリーン車§nが大きな特徴です。故障に強いシステムで§c#00ffff毎日の通勤通学§nを支える、§b§c#ffff00現代のタフで頼もしいスタンダード車両§nをご堪能ください！☆彡",
+        "remark": "§f§b§c#ffff00【☆彡車両案内☆彡】§n 現在表示中の車両は近郊形電車 §b§c#ff8a17E233系3000番台§nです。\n伝統の湘南色帯と2階建てグリーン車が大きな特徴です。",
         "candidates": [
           "オレンジ快速.宇都宮",
           "オレンジ快速.高崎",
           "オレンジ快速.単体大",
           "オレンジ快速.東海道",
-          "オレンジ快速アーバン.単体大",
           "オレンジ快速アクティー.単体大",
-          "オレンジ快速ラビット.単体大",
-          "グレー普通.宇都宮",
-          "グレー普通.高崎",
-          "グレー普通.単体大",
-          "スカイブルー特別快速.宇都宮",
-          "スカイブルー特別快速.高崎",
-          "スカイブルー特別快速.東海道",
           "緑普通.宇都宮",
           "緑普通.高崎",
           "緑普通.東海道"
@@ -485,55 +522,116 @@
       },
       {
         "vehicle": "E259系",
-        "remark": "§f§b§c#ffff00【☆彡車両案内☆彡】§n 現在表示中の車両は§b§c#ff3333特急成田エクスプレス E259系(旧塗装)§nです！日本の空の玄関口・成田空港へのアクセス特急として活躍する名車です。現在では見ることができない、車体に大きく描かれた§b§c#ff0000飛行機モチーフ§nと§b§c#ff0000『N'EX』ロゴ§nが旧塗装ならではの魅力です！白と黒の洗練されたボディに映えるルーフの§b§c#ff0000鮮烈な赤色§n。国際都市を駆け抜ける§b§c#00ffffスタイリッシュな特急電車の姿§nを存分にご堪能ください！☆彡",
+        "remark": "§f§b§c#ffff00【☆彡車両案内☆彡】§n 現在表示中の車両は§b§c#ff3333特急成田エクスプレス E259系§nです！\n成田空港へのアクセス特急として活躍する名車です。",
         "candidates": ["特急単体大"]
       },
       {
         "vehicle": "281系",
-        "remark": "§f§b§c#ffff00【☆彡車両案内☆彡】§n 現在表示中の車両は§b§c#0066ff関空特急 281系「はるか」§nです。1994年の§c#00ffff関西国際空港§nの開港に合わせてデビューし、京都や新大阪と空港を結ぶ§b§c#ff9900アクセス特急§nとして活躍しています。§b§c#ffffff「シャイニングホワイト」§nを基調とし、大空をイメージした§b§c#0033cc「コスミックブルー」§nの帯をまとった丸みを帯びた先頭形状が特徴です。古都から世界へとつながる§b§c#ffcc00日本の玄関口§nを支え続ける名車の走りをご堪能ください！☆彡",
+        "remark": "§f§b§c#ffff00【☆彡車両案内☆彡】§n 現在表示中の車両は§b§c#0066ff関空特急 281系「はるか」§nです。",
         "candidates": ["特急単体大"]
       },
       {
         "vehicle": "HC85系",
-        "remark": "§f§b§c#ffff00【☆彡車両案内☆彡】§n 現在表示中の車両は§b§c#ff6600新型ハイブリッド特急 HC85系§nです。名車§c#ccccccキハ85系§nの後継としてデビューし、特急§b§c#ff9900「ひだ」§nや§b§c#00ccff「南紀」§nとして活躍しています。エンジンで発電しモーターで走る§b§c#00ff00最新のシステム§nを採用しており、環境への配慮と電車並みの静粛性を両立しました。飛騨や紀伊の美しい自然に映える§b§c#ccccccシルバーの車体§nと、鮮やかな§b§c#ff6600オレンジ色の帯§nを纏い、次世代の非電化区間を担う§b§c#ffff00最新鋭の特急車両§nをご堪能ください！☆彡",
+        "remark": "§f§b§c#ffff00【☆彡車両案内☆彡】§n 現在表示中の車両は§b§c#ff6600新型ハイブリッド特急 HC85系§nです。",
         "candidates": ["特急単体大"]
       },
       {
         "vehicle": "5050系4000",
-        "remark": "§f§b§c#ffff00【☆彡車両案内☆彡】§n 現在表示中の車両は東急東横線の主力、§b§c#cccccc東急5050系4000番台§nです。従来の8両から輸送力を増強した§b§c#00ffff10両編成§nのグループで、車体に巻かれた鮮やかな§b§c#e60033チェリーレッドの帯§nが特徴です。副都心線から西武線、東武線、さらには相鉄線方面まで、広域にわたる直通ネットワークの要として活躍中。§b§c#ff9900複雑で多彩なパターンダイヤ§nが組まれる東横線において、特急や急行として日々駆け抜けています。都会的でシャープな§b§c#ccccccステンレスカーの走り§nをご堪能ください！☆彡",
+        "remark": "§f§b§c#ffff00【☆彡車両案内☆彡】§n 現在表示中の車両は東急東横線の主力、§b§c#cccccc東急5050系4000番台§nです。",
         "candidates": ["5050専用急行"]
       },
       {
         "vehicle": "5050系Hikarie",
-        "remark": "§f§b§c#ffff00【☆彡車両案内☆彡】§n 現在表示中の車両は特別仕様車、§b§c#ffd700東急5050系4000番台「Shibuya Hikarie号」§nです！渋谷のランドマーク『渋谷ヒカリエ』の開業1周年を記念して登場しました。通常の赤帯とは異なり、建物をイメージした§b§c#ffd700ゴールド§nを基調とする煌びやかなラッピングが施され、編成全体で§b§c#ffcc00渋谷の街の魅力§nを表現しています。広大な直通ネットワークの中でも一際目を引く§b§c#ffff00黄金の輝き§nは注目の的。多彩な顔を見せる東横線ダイヤの中で異彩を放つ§b§c#ff9900特別な姿§nをお楽しみください！☆彡",
+        "remark": "§f§b§c#ffff00【☆彡車両案内☆彡】§n 現在表示中の車両は特別仕様車、§b§c#ffd700東急5050系4000番台「Shibuya Hikarie号」§nです！",
         "candidates": ["Hikarei専用快速急行"]
       }
     ];
 
     let catalogList = [...standardDefaultCatalog];
+    let currentCandidates = [];
 
-    function applySelectedVehicle() {
-      const select = document.getElementById("presetVehicleSelect");
-      if (select.value) {
-        document.getElementById("v_vehicle").value = select.value;
+    // 車両選択ハンドラー
+    function handleVehicleSelect(val) {
+      const customInput = document.getElementById("v_vehicle_custom");
+      if (val === "__custom__") {
+        customInput.style.display = "block";
+        customInput.required = true;
+        customInput.value = "";
+        customInput.focus();
+      } else {
+        customInput.style.display = "none";
+        customInput.required = false;
+        customInput.value = "";
       }
     }
 
-    function addSelectedCandidate() {
+    function getSelectedVehicleValue() {
+      const selectVal = document.getElementById("v_vehicle_select").value;
+      if (selectVal === "__custom__") {
+        return document.getElementById("v_vehicle_custom").value.trim();
+      }
+      return selectVal;
+    }
+
+    function setSelectedVehicleValue(val) {
+      const select = document.getElementById("v_vehicle_select");
+      const customInput = document.getElementById("v_vehicle_custom");
+      const options = [...select.options].map(o => o.value);
+
+      if (options.includes(val)) {
+        select.value = val;
+        customInput.style.display = "none";
+        customInput.required = false;
+      } else if (val) {
+        select.value = "__custom__";
+        customInput.style.display = "block";
+        customInput.required = true;
+        customInput.value = val;
+      } else {
+        select.value = "";
+        customInput.style.display = "none";
+        customInput.required = false;
+      }
+    }
+
+    // 種別候補タグの追加・削除
+    function addSelectedPreset() {
       const select = document.getElementById("presetCandidateSelect");
       const val = select.value;
       if (!val) return;
 
-      const input = document.getElementById("v_candidates");
-      const existing = input.value.split(",").map(s => s.trim()).filter(Boolean);
-      if (!existing.includes(val)) {
-        existing.push(val);
-        input.value = existing.join(", ");
+      if (!currentCandidates.includes(val)) {
+        currentCandidates.push(val);
+        renderCandidateChips();
       }
       select.value = "";
     }
 
-    // § トークンのパース描画処理（改行維持対応）
+    function removeCandidateChip(index) {
+      currentCandidates.splice(index, 1);
+      renderCandidateChips();
+    }
+
+    function renderCandidateChips() {
+      const box = document.getElementById("selectedCandidatesBox");
+      box.innerHTML = "";
+      if (currentCandidates.length === 0) {
+        box.innerHTML = '<span style="font-size:11px; color:#8b949e;">選択された種別候補はありません（上のプルダウンから選択）</span>';
+        return;
+      }
+
+      currentCandidates.forEach((c, idx) => {
+        const chip = document.createElement("div");
+        chip.className = "candidate-chip";
+        chip.innerHTML = `
+          🏷️ ${c}
+          <button type="button" onclick="removeCandidateChip(${idx})">✕</button>
+        `;
+        box.appendChild(chip);
+      });
+    }
+
+    // § トークンのパース描画処理 (改行対応)
     function parseRemarkStyleTokens(text) {
       const segments = [];
       let currentColor = "";
@@ -650,7 +748,7 @@
           <div class="item-info">
             <div class="item-title">🚆 ${item.vehicle}</div>
             <div class="item-tags">${tagsHtml}</div>
-            <div style="font-size:12px; color:#a8b4c2; margin-top:6px; white-space: pre-wrap;"><b>テロップ:</b> ${item.remark || "(なし)"}</div>
+            <div style="font-size:12px; color:#a8b4c2; margin-top:6px; white-space:pre-wrap;"><b>テロップ:</b> ${item.remark || "(なし)"}</div>
           </div>
           <div style="display:flex; gap:6px;">
             <button class="btn btn-secondary" onclick="editItem(${index})">✏️ 編集</button>
@@ -666,13 +764,18 @@
     function saveVehicle(e) {
       e.preventDefault();
       const editIdx = parseInt(document.getElementById("editIndex").value, 10);
-      const vehicle = document.getElementById("v_vehicle").value.trim();
-      const candidatesRaw = document.getElementById("v_candidates").value.trim();
+      const vehicle = getSelectedVehicleValue();
+      if (!vehicle) {
+        alert("車両名を選択または入力してください。");
+        return;
+      }
       const remark = document.getElementById("v_remark").value;
 
-      const candidates = candidatesRaw.split(",").map(s => s.trim()).filter(Boolean);
-
-      const newItem = { vehicle, remark, candidates };
+      const newItem = {
+        vehicle,
+        remark,
+        candidates: [...currentCandidates]
+      };
 
       if (editIdx >= 0) {
         catalogList[editIdx] = newItem;
@@ -688,8 +791,10 @@
       const item = catalogList[index];
       if (!item) return;
       document.getElementById("editIndex").value = index;
-      document.getElementById("v_vehicle").value = item.vehicle || "";
-      document.getElementById("v_candidates").value = (item.candidates || []).join(", ");
+      setSelectedVehicleValue(item.vehicle || "");
+      currentCandidates = [...(item.candidates || [])];
+      renderCandidateChips();
+
       document.getElementById("v_remark").value = item.remark || "";
       document.getElementById("formTitle").textContent = "✏️ 車両カタログデータの編集";
       document.getElementById("saveBtn").textContent = "💾 更新を保存";
@@ -706,6 +811,9 @@
 
     function resetForm() {
       document.getElementById("vehicleForm").reset();
+      setSelectedVehicleValue("");
+      currentCandidates = [];
+      renderCandidateChips();
       document.getElementById("editIndex").value = "-1";
       document.getElementById("formTitle").textContent = "➕ 車両カタログデータの追加 / 編集";
       document.getElementById("saveBtn").textContent = "➕ リストに追加";
@@ -724,7 +832,7 @@
 
     function reloadStandardCatalog() {
       if (confirm("標準の vehicle_catalog.json データに初期化・復元しますか？")) {
-        catalogList = [...standardDefaultCatalog];
+        catalogList = JSON.parse(JSON.stringify(standardDefaultCatalog));
         renderList();
       }
     }
@@ -750,7 +858,7 @@
       reader.readAsText(file);
     }
 
-    // 初回読み込み（Fetch試行 ＋ フォールバック）
+    // 初回読み込み
     fetch("vehicle_catalog.json")
       .then(res => res.json())
       .then(data => {
@@ -763,6 +871,7 @@
         renderList();
       });
 
+    renderCandidateChips();
     updateLivePreview();
   </script>
 </body>
