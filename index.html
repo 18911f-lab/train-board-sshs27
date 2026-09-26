@@ -1,551 +1,1816 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nゲージ 運行情報・在線表示システム</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>渋谷南改札口型レイアウト設定</title>
   <style>
-    :root {
-      --bg-color: #0d1117;
-      --panel-bg: #161b22;
-      --card-bg: #21262d;
-      --text-main: #f0f6fc;
-      --text-muted: #8b949e;
-      --accent-blue: #1f6feb;
-      --border-color: #30363d;
-    }
-
-    * {
-      box-sizing: border-box;
+    html, body {
       margin: 0;
-      padding: 0;
-      user-select: none;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+      font-family: sans-serif;
     }
 
     body {
-      background-color: var(--bg-color);
-      color: var(--text-main);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Hiragino Sans", "Meiryo", sans-serif;
-      padding: 16px;
+      display: block;
+    }
+
+    #layout-root {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    .canvas {
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 60vw;
+      height: 100vh;
+      pointer-events: none;
+    }
+
+    .background-panel {
+      position: absolute;
+      right: 0;
+      display: block;
+      background-repeat: no-repeat;
+      background-size: 100% 100%;
+      background-position: left top;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      pointer-events: none;
+    }
+
+    .status-sprite {
+      position: absolute;
+      display: block;
+      background-repeat: no-repeat;
+      background-size: 100% 100%;
+      background-position: left top;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .time-digit-sprite {
+      position: absolute;
+      display: block;
+      background-repeat: no-repeat;
+      background-size: 100% 100%;
+      background-position: left top;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .type-sprite {
+      position: absolute;
+      display: block;
+      background-repeat: no-repeat;
+      background-size: 100% 100%;
+      background-position: left top;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .vehicle-sprite {
+      position: absolute;
+      display: block;
+      background-repeat: no-repeat;
+      background-size: contain;
+      background-position: center center;
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    .remark-sprite {
+      position: absolute;
+      display: block;
+      overflow: hidden;
+      box-sizing: border-box;
+      pointer-events: none;
+      z-index: 5;
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 0.8cm;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      line-height: 1;
+    }
+
+    .remark-text {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      white-space: nowrap;
+      display: inline-block;
+      min-width: max-content;
+      will-change: transform;
+      user-select: none;
+      font-size: 0.8cm;
+      color: #fff;
+    }
+
+    @keyframes remark-scroll {
+      from {
+        transform: translateX(0) translateY(-50%);
+      }
+      to {
+        transform: translateX(-50%) translateY(-50%);
+      }
+    }
+
+    @keyframes remark-blink {
+      0%, 49% {
+        opacity: 1;
+      }
+      50%, 100% {
+        opacity: 0.1;
+      }
+    }
+
+    .background-panel.top {
+      top: 0;
+    }
+
+    .background-panel.bottom {
+      bottom: 0;
+    }
+
+    .control-panel {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 240px;
       height: 100vh;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      overflow: hidden;
+      justify-content: flex-start;
+      gap: 12px;
+      padding: 12px 10px;
+      box-sizing: border-box;
+      background: #16181b;
+      border-right: 2px solid #2e343d;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.8);
+      z-index: 50;
+      overflow-y: auto;
+      overflow-x: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Yu Gothic", "Meiryo", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
-    header {
-      display: flex;
-      justify-content: space-between;
+    .control-panel.collapsed {
+      transform: translateX(-100%);
+    }
+
+    /* パネルが閉じているときに画面左端に常駐する「設定を開く」ボタン */
+    .panel-open-floating-btn {
+      position: fixed;
+      top: 12px;
+      left: 0;
+      padding: 7px 12px;
+      background: #1c2026;
+      border: 1px solid #4a5568;
+      border-left: none;
+      border-radius: 0 4px 4px 0;
+      color: #e2e8f0;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 3px 2px 12px rgba(0,0,0,0.8);
+      z-index: 100;
+      display: none;
       align-items: center;
-      padding: 10px 16px;
-      background: var(--panel-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      margin-bottom: 12px;
+      gap: 5px;
+      user-select: none;
+      letter-spacing: 0.04em;
+    }
+    .panel-open-floating-btn:hover {
+      background: #2b323c;
+      color: #fff;
+      border-color: #63b3ed;
+    }
+    .panel-open-floating-btn:active {
+      background: #15181d;
+    }
+    .panel-open-floating-btn.visible {
+      display: flex !important;
     }
 
-    .header-title {
-      font-size: 20px;
-      font-weight: bold;
-      color: #58a6ff;
+    /* カスタムスクロールバー */
+    .control-panel::-webkit-scrollbar {
+      width: 4px;
+    }
+    .control-panel::-webkit-scrollbar-thumb {
+      background: #333a42;
+    }
+
+    .panel-header-row {
       display: flex;
       align-items: center;
-      gap: 10px;
+      justify-content: space-between;
+      border-bottom: 1px solid #2a3038;
+      padding: 2px 0 4px 0;
+      margin-bottom: 2px;
     }
 
-    .header-info {
-      font-size: 13px;
-      color: var(--text-muted);
+    .panel-header-title {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: #9daec2;
+      text-align: center;
+      flex: 1;
     }
 
-    .board-container {
+    .panel-close-icon-btn {
+      background: transparent;
+      border: none;
+      color: #6c7a8a;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 2px 4px;
+    }
+    .panel-close-icon-btn:hover {
+      color: #fff;
+    }
+
+    .global-controls {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      flex-grow: 1;
-      justify-content: center;
+      gap: 7px;
+      margin-bottom: 6px;
+      padding: 8px;
+      background: #1c1f24;
+      border: 1px solid #2d333b;
+    }
+
+    .global-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      color: #cbd5e1;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .global-row label {
+      min-width: 60px;
+      color: #a8b4c2;
+      font-size: 11px;
+      letter-spacing: 0.02em;
+    }
+
+    .global-row input {
+      width: 65px;
+      padding: 3px 5px;
+      border-radius: 0;
+      border: 1px solid #3d4652;
+      background: #0d0e10;
+      color: #e2e8f0;
+      font-size: 11px;
+      font-family: monospace;
+      text-align: right;
+    }
+
+    .reset-button {
+      width: 100%;
+      padding: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      background: #252a30;
+      border: 1px solid #3d4550;
+      color: #cfd8e3;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    .reset-button:hover {
+      background: #303740;
+      color: #fff;
+    }
+    .reset-button:active {
+      background: #1a1e22;
+    }
+
+    .track-input {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 8px 7px;
+      background: #1c1f24;
+      border: 1px solid #2d333b;
+      box-sizing: border-box;
     }
 
     .track-row {
       display: flex;
       align-items: center;
-      background: var(--panel-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 8px 14px;
-      gap: 14px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      gap: 6px;
     }
 
-    .track-badge {
-      font-size: 18px;
-      font-weight: 800;
-      background: #1f6feb;
-      color: #fff;
-      padding: 6px 14px;
-      border-radius: 6px;
-      min-width: 75px;
+    .track-label {
+      width: 48px;
+      min-width: 48px;
+      color: #e2e8f0;
+      font-weight: 700;
+      font-size: 11px;
       text-align: center;
-      box-shadow: 0 0 10px rgba(31, 111, 235, 0.4);
+      flex-shrink: 0;
+      padding: 3px 0;
+      border: 1px solid #3b434d;
+      background: #131518;
+      box-sizing: border-box;
+      letter-spacing: 0.02em;
     }
 
-    .led-slot {
-      height: 48px;
-      background: #000;
-      border: 1px solid #484f58;
-      border-radius: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
+    select {
+      flex: 1;
+      min-width: 0;
+      width: auto;
+      font-size: 11px;
+      padding: 3px 4px;
+      border-radius: 0;
+      border: 1px solid #3d4652;
+      background: #0d0e10;
+      color: #e2e8f0;
     }
 
-    .slot-type { width: 140px; }
-    .slot-dest { width: 150px; }
-    .slot-cars { width: 85px; }
-
-    .led-slot img {
-      max-height: 100%;
-      max-width: 100%;
-      object-fit: contain;
-    }
-
-    .led-fallback-text {
-      color: #ffab70;
-      font-weight: bold;
-      font-size: 14px;
-      letter-spacing: 1px;
-    }
-
-    .status-badge {
-      min-width: 105px;
-      height: 38px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      font-size: 15px;
-      border-radius: 6px;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-    }
-
-    .st-running {
-      background: #238636;
-      color: #ffffff;
-      border: 1px solid #3fb950;
-      box-shadow: 0 0 8px rgba(63, 185, 80, 0.4);
-    }
-
-    .st-stopped {
-      background: #d29922;
-      color: #0d1117;
-      border: 1px solid #e3b341;
-      box-shadow: 0 0 8px rgba(227, 179, 65, 0.4);
-    }
-
-    .st-adjusting {
-      background: #bd561d;
-      color: #ffffff;
-      border: 1px solid #f0883e;
-      box-shadow: 0 0 8px rgba(240, 136, 62, 0.4);
-    }
-
-    .st-suspended {
-      background: #da3633;
-      color: #ffffff;
-      border: 1px solid #f85149;
-      box-shadow: 0 0 8px rgba(248, 81, 73, 0.4);
-    }
-
-    .train-select {
-      background: var(--card-bg);
-      color: var(--text-main);
-      border: 1px solid var(--border-color);
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: bold;
-      outline: none;
-      cursor: pointer;
-      flex-grow: 1;
-      max-width: 280px;
-    }
-
-    .train-select:focus {
-      border-color: #58a6ff;
-    }
-
-    .status-btn-group {
-      display: flex;
-      gap: 5px;
-    }
-
-    .btn-status {
-      padding: 6px 12px;
-      border-radius: 4px;
-      border: 1px solid var(--border-color);
-      background: #21262d;
-      color: var(--text-main);
-      font-size: 12px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .btn-status:hover {
-      background: #30363d;
-      border-color: #8b949e;
-    }
-
-    .btn-status.active {
-      background: #1f6feb;
-      border-color: #58a6ff;
+    select option {
+      background: #1a1d20;
       color: #fff;
     }
 
-    /* 下部スクロールテロップ */
-    .telop-container {
-      background: #000;
-      border: 2px solid #ff9900;
-      border-radius: 6px;
-      height: 52px;
-      position: relative;
-      overflow: hidden;
+    .status-group {
       display: flex;
-      align-items: center;
-      box-shadow: inset 0 0 12px rgba(255, 153, 0, 0.3);
-      margin-top: 8px;
+      gap: 3px;
+      width: 100%;
     }
 
-    .telop-text {
-      position: absolute;
+    .status-group button {
+      flex: 1;
+      padding: 4px 0;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 0;
+      border: 1px solid #333a44;
+      background: #1a1e22;
+      color: #8c9ba9;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+    }
+
+    .status-group button:hover {
+      background: #23282e;
+      color: #cbd5e1;
+    }
+
+    /* 状態ボタンのアクティブ色（渋い鉄道機器風） */
+    .status-group button.active {
+      font-weight: 700;
+      box-shadow: inset 0 0 4px rgba(0,0,0,0.6);
+    }
+    .status-group button:nth-child(1).active {
+      background: #143520;
+      border-color: #276749;
+      color: #68d391; /* 運転: 深緑 */
+    }
+    .status-group button:nth-child(2).active {
+      background: #3d2f0a;
+      border-color: #744210;
+      color: #f6e05e; /* 点検: 渋黄 */
+    }
+    .status-group button:nth-child(3).active {
+      background: #3f1515;
+      border-color: #7b2424;
+      color: #fc8181; /* 抑止: 渋赤 */
+    }
+    .status-group button:nth-child(4).active {
+      background: #25282c;
+      border-color: #4a5568;
+      color: #e2e8f0; /* 終了: 鈍炭色 */
+    }
+
+    .mode-toggle-group {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 2px;
+      width: 100%;
+    }
+
+    .mode-toggle-group button {
+      flex: 1;
+      padding: 5px 4px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      background: #181b1f;
+      border: 1px solid #333a44;
+      color: #8c9ba9;
+      cursor: pointer;
+    }
+
+    .mode-toggle-group button.active {
+      background: #1b2e4b;
+      border-color: #2b6cb0;
+      color: #bee3f8;
+      box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+    }
+
+    .time-input-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 2px;
+    }
+
+    .time-input-group label {
+      color: #8c98a5;
+      font-size: 11px;
+      font-weight: 600;
+      min-width: 52px;
+    }
+
+    .time-input-group input[type="time"] {
+      flex: 1;
+      padding: 2px 4px;
+      border: 1px solid #3d4652;
+      background: #0d0e10;
+      color: #e2e8f0;
+      font-size: 11px;
+      font-family: monospace;
+    }
+
+    .schedule-controls {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      margin-top: 4px;
+      padding-top: 6px;
+      border-top: 1px solid #2a3038;
+    }
+
+    .schedule-controls.visible {
+      display: flex;
+    }
+
+    .schedule-controls button {
+      width: 100%;
+      padding: 4px 3px;
+      font-size: 11px;
+      font-weight: 600;
+      background: #20242a;
+      border: 1px solid #353d47;
+      color: #b5c0cd;
+      cursor: pointer;
+    }
+    .schedule-controls button:hover {
+      background: #2a3038;
+      color: #fff;
+    }
+
+    .schedule-clock-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 2px;
+    }
+    .schedule-clock-row label {
+      font-size: 11px;
+      color: #8c98a5;
       white-space: nowrap;
-      font-size: 18px;
-      font-weight: bold;
-      color: #ffaa00;
-      text-shadow: 0 0 6px #ff9900;
-      will-change: transform;
+    }
+    .schedule-clock-row input[type="time"] {
+      flex: 1;
+      padding: 2px 4px;
+      font-size: 11px;
+      border: 1px solid #3d4652;
+      background: #0d0e10;
+      color: #e2e8f0;
+      font-family: monospace;
+    }
+
+    .schedule-status {
+      width: 100%;
+      color: #a4b3c4;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.4;
+      margin-top: 4px;
+      word-break: break-all;
+    }
+
+    .schedule-status.error {
+      color: #feb2b2;
+    }
+
+    .no-schedule-label {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      font: 700 12px sans-serif;
+      white-space: nowrap;
     }
   </style>
 </head>
 <body>
+  <div id="layout-root"></div>
 
-  <header>
-    <div class="header-title">
-      <span>🚆 N-Gauge 運行管理・在線情報ディスプレイ</span>
-    </div>
-    <div style="display: flex; align-items: center; gap: 15px;">
-      <!-- 型切り替えセレクター -->
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <label for="modelSelect" style="font-size: 13px; font-weight: bold; color: #8b949e;">発車標タイプ(型):</label>
-        <select id="modelSelect" class="train-select" style="max-width: 180px; padding: 4px 8px; font-size: 13px;" onchange="changeModel(this.value)">
-          <!-- 型マスターから動的生成 -->
-        </select>
-      </div>
-      <a href="editor.html" target="_blank" style="padding: 6px 12px; background: #238636; border: 1px solid #2ea043; border-radius: 6px; color: #fff; text-decoration: none; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 5px;">
-        ⚙️ データ管理・JSON生成 (別タブ)
-      </a>
-      <div class="header-info">
-        ※ 実況モード（運行状況連動中）
-      </div>
-    </div>
-  </header>
-
-  <div class="board-container" id="boardContainer">
-    <!-- 1〜4番線が動的にレンダリングされます -->
-  </div>
-
-  <div class="telop-container">
-    <div class="telop-text" id="telopText">Nゲージ運行案内システム 稼働中</div>
-  </div>
-
+  <script src="schedule.js"></script>
   <script>
-    /* ==========================================================================
-       1. 型マスター (MODEL_MASTER)
-       新しい型フォルダが追加されたら、ここに設定を増やすだけでOKです。
-       ========================================================================== */
-    const MODEL_MASTER = {
-      "default": {
-        id: "default",
-        name: "ルート直下 (標準)",
-        dir: ".", // 画像フォルダ
-        prefix: "", // 識別符号（空の場合は "種別-xxx.png" のように直下を参照）
-        layout: {
-          slotTypeWidth: 140,
-          slotDestWidth: 150,
-          slotCarsWidth: 85,
-          slotHeight: 48
-        },
-        resolveImg: function(category, key) {
-          if (!key) return "";
-          if (this.prefix) {
-            return `${this.dir}/${category}-${this.prefix}-${key}.png`;
+    const REMARK_SCROLL_CONFIG = {
+      durationSeconds: 75,
+      fadeInStartRatio: 0.0,
+      fadeOutStartRatio: 1.0,
+      travelDistancePaddingRatio: 0.5
+    };
+
+    let currentStation = null;
+    let SERIES_NAME = "渋谷南改札口型";
+    let panelWidth = 0;
+    let panelHeight = 0;
+
+    const ratio = (value, total) => total === 0 ? 0 : value / total;
+    const encodeAssetUrl = (asset) => encodeURI(asset);
+    const formatSystemTime = () => {
+      const now = new Date();
+      return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    };
+
+    const resolveExistingAssetUrl = async (candidates) => {
+      const uniqueCandidates = [...new Set((candidates || []).filter(Boolean))];
+      for (const candidate of uniqueCandidates) {
+        const img = new Image();
+        const loaded = await new Promise((resolve) => {
+          img.onload = () => resolve(true);
+          img.onerror = () => resolve(false);
+          img.src = candidate;
+        });
+        if (loaded) {
+          return candidate;
+        }
+      }
+      return uniqueCandidates[0] || "";
+    };
+
+    const root = document.getElementById("layout-root");
+    const topPanel = document.createElement("div");
+    topPanel.className = "background-panel top";
+    topPanel.style.left = "auto";
+    topPanel.style.right = "0";
+    topPanel.style.top = "0";
+    root.appendChild(topPanel);
+
+    const bottomPanel = document.createElement("div");
+    bottomPanel.className = "background-panel bottom";
+    bottomPanel.style.left = "auto";
+    bottomPanel.style.right = "0";
+    bottomPanel.style.bottom = "0";
+    root.appendChild(bottomPanel);
+
+    const controlPanel = document.createElement("div");
+    controlPanel.className = "control-panel";
+
+    // パネルが閉じているときに画面左端に表示される「開く」ボタン
+    const panelOpenBtn = document.createElement("button");
+    panelOpenBtn.type = "button";
+    panelOpenBtn.className = "panel-open-floating-btn";
+    panelOpenBtn.innerHTML = "⚙ 画面設定を開く ▶";
+    document.body.appendChild(panelOpenBtn);
+
+    const setPanelCollapsed = (isCollapsed) => {
+      controlPanel.classList.toggle("collapsed", isCollapsed);
+      panelOpenBtn.classList.toggle("visible", isCollapsed);
+    };
+
+    panelOpenBtn.addEventListener("click", () => {
+      setPanelCollapsed(false);
+    });
+
+    // ヘッダー行
+    const panelHeaderRow = document.createElement("div");
+    panelHeaderRow.className = "panel-header-row";
+
+    const panelHeader = document.createElement("div");
+    panelHeader.className = "panel-header-title";
+    panelHeader.textContent = "【 画面設定 】";
+
+    const panelCloseBtn = document.createElement("button");
+    panelCloseBtn.type = "button";
+    panelCloseBtn.className = "panel-close-icon-btn";
+    panelCloseBtn.textContent = "◀ 閉じる";
+    panelCloseBtn.addEventListener("click", () => {
+      setPanelCollapsed(true);
+    });
+
+    panelHeaderRow.appendChild(panelHeader);
+    panelHeaderRow.appendChild(panelCloseBtn);
+    controlPanel.appendChild(panelHeaderRow);
+
+    const globalVariantState = {
+      currentVariant: "en",
+      currentMode: "live", // "live" (実況) または "schedule" (予定)
+      jpSeconds: 3,
+      enSeconds: 3,
+      timeoutId: null
+    };
+
+    const updateBackgroundPanels = () => {
+      if (!currentStation) return;
+      const mode = globalVariantState.currentMode || "live";
+      const upperBg = currentStation.panels?.upper?.backgrounds?.[mode] || currentStation.panels?.upper?.backgrounds?.default;
+      const lowerBg = currentStation.panels?.lower?.backgrounds?.[mode] || currentStation.panels?.lower?.backgrounds?.default;
+
+      if (upperBg) {
+        resolveExistingAssetUrl([upperBg]).then((asset) => {
+          if (asset) topPanel.style.backgroundImage = `url('${encodeAssetUrl(asset)}')`;
+        });
+      }
+      if (lowerBg) {
+        resolveExistingAssetUrl([lowerBg]).then((asset) => {
+          if (asset) bottomPanel.style.backgroundImage = `url('${encodeAssetUrl(asset)}')`;
+        });
+      }
+    };
+
+    const applyStationLayout = (station) => {
+      currentStation = station;
+      SERIES_NAME = station.seriesName || station.name || "渋谷南改札口型";
+
+      const upperWidth = station.panels?.upper?.widthCm || 33.64;
+      const upperHeight = station.panels?.upper?.heightCm || 8.45;
+      const lowerHeight = station.panels?.lower?.heightCm || 8.45;
+      const sceneWidthCm = upperWidth;
+      const sceneHeightCm = upperHeight + lowerHeight;
+
+      const scale = Math.min(
+        window.innerHeight / sceneHeightCm,
+        window.innerWidth / sceneWidthCm
+      );
+
+      panelWidth = sceneWidthCm * scale * 0.9;
+      panelHeight = upperHeight * scale * 0.9;
+
+      topPanel.style.width = `${panelWidth}px`;
+      topPanel.style.height = `${panelHeight}px`;
+      topPanel.style.backgroundSize = "100% 100%";
+
+      bottomPanel.style.width = `${panelWidth}px`;
+      bottomPanel.style.height = `${panelHeight}px`;
+      bottomPanel.style.backgroundSize = "100% 100%";
+
+      updateBackgroundPanels();
+    };
+
+    const setDisplayMode = (mode) => {
+      globalVariantState.currentMode = mode;
+      document.querySelectorAll(".mode-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.mode === mode);
+      });
+      document.querySelectorAll(".status-group").forEach((el) => {
+        el.style.display = mode === "live" ? "flex" : "none";
+      });
+      document.querySelectorAll(".time-input-group").forEach((el) => {
+        el.style.display = mode === "schedule" ? "flex" : "none";
+      });
+      scheduleControls?.classList.toggle("visible", mode === "schedule");
+      
+      // 背景画像の差し替え
+      updateBackgroundPanels();
+
+      // 描画ロジック
+      if (mode === "live") {
+        document.querySelectorAll(".time-digit-sprite").forEach((el) => el.remove());
+        document.querySelectorAll(".no-schedule-label").forEach((el) => el.remove());
+        renderStatusSprites();
+      } else {
+        document.querySelectorAll(".status-sprite").forEach((el) => el.remove());
+        renderTimeSprites();
+        renderNoScheduleLabels();
+      }
+    };
+
+    const applyGlobalVariantToAllTracks = (variant) => {
+      globalVariantState.currentVariant = variant;
+      trackList.forEach((trackNo) => {
+        if (trackState[trackNo]) {
+          trackState[trackNo].variant = variant;
+        }
+      });
+      renderVehicleSprites();
+      renderTypeSprites();
+    };
+
+    const scheduleVariantCycle = () => {
+      if (globalVariantState.timeoutId) {
+        clearTimeout(globalVariantState.timeoutId);
+      }
+
+      const nextVariant = globalVariantState.currentVariant === "jp" ? "en" : "jp";
+      const nextDurationMs = (nextVariant === "jp" ? globalVariantState.jpSeconds : globalVariantState.enSeconds) * 1000;
+
+      globalVariantState.timeoutId = setTimeout(() => {
+        applyGlobalVariantToAllTracks(nextVariant);
+        scheduleVariantCycle();
+      }, nextDurationMs);
+    };
+
+    const resetRandomizedVehicleType = () => {
+      trackList.forEach((trackNo) => {
+        if (!trackState[trackNo]) return;
+
+        trackState[trackNo].type = resolveVehicleType(trackState[trackNo].vehicle);
+        const typeAssets = resolveTypeAssets(trackState[trackNo].type);
+        trackState[trackNo].typeJpn = typeAssets.jpn;
+        trackState[trackNo].typeEn = typeAssets.en;
+      });
+
+      renderTypeSprites();
+    };
+
+    const globalControls = document.createElement("div");
+    globalControls.className = "global-controls";
+    const trackSelects = new Map();
+    const scheduleUi = { timeInputs: new Map(), status: null, clockInput: null, systemClock: true, autoUpdate: true, ready: false };
+
+    const scheduleControls = document.createElement("div");
+    scheduleControls.className = "schedule-controls";
+
+    const scheduleFileInput = document.createElement("input");
+    scheduleFileInput.type = "file";
+    scheduleFileInput.accept = ".json,application/json";
+    scheduleFileInput.hidden = true;
+    const scheduleLoadButton = document.createElement("button");
+    scheduleLoadButton.type = "button";
+    scheduleLoadButton.textContent = "時刻表読込 (JSON)";
+    scheduleLoadButton.addEventListener("click", () => scheduleFileInput.click());
+    scheduleFileInput.addEventListener("change", () => loadScheduleFile(scheduleFileInput.files?.[0]));
+
+    const scheduleExportButton = document.createElement("button");
+    scheduleExportButton.type = "button";
+    scheduleExportButton.textContent = "時刻表エクスポート";
+    scheduleExportButton.addEventListener("click", () => exportCurrentSchedule());
+
+    const scheduleResetButton = document.createElement("button");
+    scheduleResetButton.type = "button";
+    scheduleResetButton.textContent = "リセット (初期値)";
+    scheduleResetButton.addEventListener("click", () => resetScheduleToRaw());
+
+    const clockRow = document.createElement("div");
+    clockRow.className = "schedule-clock-row";
+    const clockLabel = document.createElement("label");
+    clockLabel.textContent = "基準時刻:";
+    const clockInput = document.createElement("input");
+    clockInput.type = "time";
+    clockInput.addEventListener("input", () => {
+      if (clockInput.value) {
+        scheduleUi.systemClock = false;
+        refreshScheduleDisplay();
+      }
+    });
+    scheduleUi.clockInput = clockInput;
+    const systemClockButton = document.createElement("button");
+    systemClockButton.type = "button";
+    systemClockButton.style.width = "auto";
+    systemClockButton.style.padding = "2px 6px";
+    systemClockButton.textContent = "PC時刻";
+    systemClockButton.addEventListener("click", () => {
+      scheduleUi.systemClock = true;
+      refreshScheduleDisplay();
+    });
+    clockRow.append(clockLabel, clockInput, systemClockButton);
+
+    const scheduleRefreshButton = document.createElement("button");
+    scheduleRefreshButton.type = "button";
+    scheduleRefreshButton.textContent = "即時更新";
+    scheduleRefreshButton.addEventListener("click", () => refreshScheduleDisplay());
+
+    const autoUpdateLabel = document.createElement("label");
+    autoUpdateLabel.style.fontSize = "11px";
+    autoUpdateLabel.style.color = "#a8b4c2";
+    const autoUpdateCheckbox = document.createElement("input");
+    autoUpdateCheckbox.type = "checkbox";
+    autoUpdateCheckbox.checked = true;
+    autoUpdateCheckbox.addEventListener("change", () => { scheduleUi.autoUpdate = autoUpdateCheckbox.checked; });
+    autoUpdateLabel.append(autoUpdateCheckbox, " 自動更新");
+
+    const scheduleStatus = document.createElement("div");
+    scheduleStatus.className = "schedule-status";
+    scheduleStatus.textContent = "）";
+    scheduleUi.status = scheduleStatus;
+    scheduleControls.append(scheduleFileInput, scheduleLoadButton, scheduleExportButton, scheduleResetButton, clockRow, scheduleRefreshButton, autoUpdateLabel, scheduleStatus);
+
+    const jpRow = document.createElement("div");
+    jpRow.className = "global-row";
+    const jpLabel = document.createElement("label");
+    jpLabel.textContent = "和文(秒)";
+    const jpInput = document.createElement("input");
+    jpInput.type = "number";
+    jpInput.min = "0.1";
+    jpInput.step = "0.1";
+    jpInput.value = String(globalVariantState.jpSeconds);
+    jpInput.addEventListener("input", () => {
+      const value = Number(jpInput.value);
+      globalVariantState.jpSeconds = Number.isFinite(value) && value > 0 ? value : 0.1;
+      jpInput.value = String(globalVariantState.jpSeconds);
+      scheduleVariantCycle();
+    });
+    jpRow.appendChild(jpLabel);
+    jpRow.appendChild(jpInput);
+
+    const enRow = document.createElement("div");
+    enRow.className = "global-row";
+    const enLabel = document.createElement("label");
+    enLabel.textContent = "英文(秒)";
+    const enInput = document.createElement("input");
+    enInput.type = "number";
+    enInput.min = "0.1";
+    enInput.step = "0.1";
+    enInput.value = String(globalVariantState.enSeconds);
+    enInput.addEventListener("input", () => {
+      const value = Number(enInput.value);
+      globalVariantState.enSeconds = Number.isFinite(value) && value > 0 ? value : 0.1;
+      enInput.value = String(globalVariantState.enSeconds);
+      scheduleVariantCycle();
+    });
+    enRow.appendChild(enLabel);
+    enRow.appendChild(enInput);
+
+    const remarkRow = document.createElement("div");
+    remarkRow.className = "global-row";
+    const remarkLabel = document.createElement("label");
+    remarkLabel.textContent = "備考(秒)";
+    const remarkInput = document.createElement("input");
+    remarkInput.type = "number";
+    remarkInput.min = "5";
+    remarkInput.step = "1";
+    remarkInput.value = String(REMARK_SCROLL_CONFIG.durationSeconds);
+    remarkInput.addEventListener("input", () => {
+      const value = Number(remarkInput.value);
+      REMARK_SCROLL_CONFIG.durationSeconds = Number.isFinite(value) && value > 0 ? value : 5;
+      remarkInput.value = String(REMARK_SCROLL_CONFIG.durationSeconds);
+      renderRemarkSprites();
+    });
+    remarkRow.appendChild(remarkLabel);
+    remarkRow.appendChild(remarkInput);
+
+    const resetButton = document.createElement("button");
+    resetButton.type = "button";
+    resetButton.className = "reset-button";
+    resetButton.textContent = "種別ランダム割振";
+    resetButton.addEventListener("click", () => {
+      trackList.forEach((trackNo) => {
+        if (!trackState[trackNo]) return;
+        trackState[trackNo].variant = globalVariantState.currentVariant;
+        trackState[trackNo].type = resolveVehicleType(trackState[trackNo].vehicle);
+        const typeAssets = resolveTypeAssets(trackState[trackNo].type);
+        trackState[trackNo].typeJpn = typeAssets.jpn;
+        trackState[trackNo].typeEn = typeAssets.en;
+      });
+      renderTypeSprites();
+      renderVehicleSprites();
+    });
+
+    const modeToggleRow = document.createElement("div");
+    modeToggleRow.className = "mode-toggle-group";
+    
+    const liveModeBtn = document.createElement("button");
+    liveModeBtn.type = "button";
+    liveModeBtn.className = "mode-btn active";
+    liveModeBtn.dataset.mode = "live";
+    liveModeBtn.textContent = "実況モード";
+    liveModeBtn.addEventListener("click", () => setDisplayMode("live"));
+
+    const scheduleModeBtn = document.createElement("button");
+    scheduleModeBtn.type = "button";
+    scheduleModeBtn.className = "mode-btn";
+    scheduleModeBtn.dataset.mode = "schedule";
+    scheduleModeBtn.textContent = "予定モード";
+    scheduleModeBtn.addEventListener("click", () => setDisplayMode("schedule"));
+
+    modeToggleRow.appendChild(liveModeBtn);
+    modeToggleRow.appendChild(scheduleModeBtn);
+
+    globalControls.appendChild(modeToggleRow);
+    globalControls.appendChild(scheduleControls);
+    globalControls.appendChild(jpRow);
+    globalControls.appendChild(enRow);
+    globalControls.appendChild(remarkRow);
+    globalControls.appendChild(resetButton);
+
+    const trackList = [1, 2, 3, 4];
+    const vehicleCatalog = [];
+    const vehicleList = [];
+
+    const resolveVehicleType = (vehicleName) => {
+      if (!vehicleName || !Array.isArray(vehicleCatalog) || vehicleCatalog.length === 0) {
+        return "";
+      }
+
+      const vehicle = vehicleCatalog.find((item) => item.vehicle === vehicleName);
+      const fallbackCandidates = {
+        "103系": ["オレンジ快速.単体大"]
+      };
+      const candidates = Array.isArray(vehicle?.candidates) && vehicle.candidates.length > 0
+        ? vehicle.candidates
+        : (fallbackCandidates[vehicleName] || []);
+
+      if (candidates.length === 0) {
+        return "";
+      }
+
+      const selectedIndex = Math.floor(Math.random() * candidates.length);
+      return candidates[selectedIndex];
+    };
+
+    const resolveTypeAssets = (main) => {
+      if (!main) {
+        return { jpn: [], en: [] };
+      }
+
+      const base = String(main).trim();
+      const rawAssetDir = currentStation?.assetDir || "img/渋谷南改札口型";
+      const assetDir = rawAssetDir.startsWith("img/") ? rawAssetDir : `img/${rawAssetDir}`;
+      const fallbackDir = rawAssetDir.replace(/^img\//, "");
+      const series = currentStation?.seriesName || "渋谷南改札口型";
+      const buildCandidates = (lang) => [
+        `${assetDir}/種別-シリーズ/種別-${series}-${series}-${base}-${lang}.png`,
+        `${assetDir}/種別-シリーズ/種別-${series}-${base}-${lang}.png`,
+        `${assetDir}/種別-シリーズ/種別-${base}-${lang}.png`,
+        `${fallbackDir}/種別-シリーズ/種別-${series}-${series}-${base}-${lang}.png`,
+        `${fallbackDir}/種別-シリーズ/種別-${series}-${base}-${lang}.png`,
+        `${fallbackDir}/種別-シリーズ/種別-${base}-${lang}.png`,
+        `種別-${series}-${series}-${base}-${lang}.png`,
+        `種別-${series}-${base}-${lang}.png`,
+        `種別-${base}-${lang}.png`
+      ];
+
+      return {
+        jpn: buildCandidates("jp"),
+        en: buildCandidates("en")
+      };
+    };
+
+    const resolveVehicleAssets = (main) => {
+      if (!main) {
+        return { jpn: [], en: [] };
+      }
+
+      const base = String(main).trim();
+      const rawAssetDir = currentStation?.assetDir || "img/渋谷南改札口型";
+      const assetDir = rawAssetDir.startsWith("img/") ? rawAssetDir : `img/${rawAssetDir}`;
+      const fallbackDir = rawAssetDir.replace(/^img\//, "");
+      const series = currentStation?.seriesName || "渋谷南改札口型";
+      const buildCandidates = (lang) => [
+        `${assetDir}/車両-シリーズ/車両-${series}-${series}-${base}-${lang}.png`,
+        `${assetDir}/車両-シリーズ/車両-${series}-${base}-${lang}.png`,
+        `${assetDir}/車両-シリーズ/車両-${base}-${lang}.png`,
+        `${fallbackDir}/車両-シリーズ/車両-${series}-${series}-${base}-${lang}.png`,
+        `${fallbackDir}/車両-シリーズ/車両-${series}-${base}-${lang}.png`,
+        `${fallbackDir}/車両-シリーズ/車両-${base}-${lang}.png`,
+        `車両-${series}-${series}-${base}-${lang}.png`,
+        `車両-${series}-${base}-${lang}.png`,
+        `車両-${base}-${lang}.png`
+      ];
+
+      return {
+        jpn: buildCandidates("jpn"),
+        en: buildCandidates("en")
+      };
+    };
+
+    const resolveVehicleRemark = (vehicleName) => {
+      if (!vehicleName || !Array.isArray(vehicleCatalog) || vehicleCatalog.length === 0) {
+        return "";
+      }
+
+      const vehicle = vehicleCatalog.find((item) => item.vehicle === vehicleName);
+      return vehicle?.remark || "";
+    };
+
+    const resolveTypeSpriteSize = (main) => {
+      const defaultSize = currentStation?.defaultSizes?.type || { widthCm: 3, heightCm: 1.15 };
+      if (!main || !currentStation?.specialOverrides?.typeRules) {
+        return defaultSize;
+      }
+
+      const compact = String(main).trim();
+      const match = currentStation.specialOverrides.typeRules.find((rule) => compact.includes(rule.pattern));
+      return match?.size || defaultSize;
+    };
+
+    const resolveTypeDisplayOffset = (main) => {
+      if (!main || !currentStation?.specialOverrides?.typeRules) {
+        return { yCm: 0.03 };
+      }
+      const compact = String(main).trim();
+      const match = currentStation.specialOverrides.typeRules.find((rule) => compact.includes(rule.pattern));
+      const extraYOffset = match?.offsetY || 0;
+      return { yCm: 0.03 + extraYOffset };
+    };
+
+    const statusValueMap = {
+      "運転": "走行中",
+      "点検": "車両点検中",
+      "抑止": "運転見合せ",
+      "終了": "運転終了"
+    };
+    const statusAssetMap = {
+      "走行中": [
+        "img/渋谷南改札口型/状況-シリーズ/状況-渋谷南改札口型-走行中.png",
+        "img/渋谷南改札口型/状況-シリーズ/状況-走行中.png",
+        "渋谷南改札口型/状況-シリーズ/状況-渋谷南改札口型-走行中.png",
+        "渋谷南改札口型/状況-シリーズ/状況-走行中.png",
+        "状況-走行中.png"
+      ],
+      "車両点検中": [
+        "img/渋谷南改札口型/状況-シリーズ/状況-渋谷南改札口型-車両点検中.png",
+        "img/渋谷南改札口型/状況-シリーズ/状況-車両点検中.png",
+        "渋谷南改札口型/状況-シリーズ/状況-渋谷南改札口型-車両点検中.png",
+        "渋谷南改札口型/状況-シリーズ/状況-車両点検中.png",
+        "状況-車両点検中.png"
+      ],
+      "運転見合せ": [
+        "img/渋谷南改札口型/状況-シリーズ/状況-渋谷南改札口型-運転見合せ.png",
+        "img/渋谷南改札口型/状況-シリーズ/状況-運転見合せ.png",
+        "渋谷南改札口型/状況-シリーズ/状況-渋谷南改札口型-運転見合せ.png",
+        "渋谷南改札口型/状況-シリーズ/状況-運転見合せ.png",
+        "状況-運転見合せ.png"
+      ],
+      "運転終了": [
+        "img/渋谷南改札口型/状況-シリーズ/状況-渋谷南改札口型-運転終了.png",
+        "img/渋谷南改札口型/状況-シリーズ/状況-運転終了.png",
+        "渋谷南改札口型/状況-シリーズ/状況-渋谷南改札口型-運転終了.png",
+        "渋谷南改札口型/状況-シリーズ/状況-運転終了.png",
+        "状況-運転終了.png"
+      ]
+    };
+
+    const trackState = {};
+
+    trackList.forEach((trackNo) => {
+      const row = document.createElement("div");
+      row.className = "track-input";
+
+      const labelRow = document.createElement("div");
+      labelRow.className = "track-row";
+
+      const label = document.createElement("div");
+      label.className = "track-label";
+      label.textContent = `${trackNo}番線`;
+
+      const select = document.createElement("select");
+      vehicleList.forEach((name) => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+      });
+
+      labelRow.appendChild(label);
+      labelRow.appendChild(select);
+
+      const statusGroup = document.createElement("div");
+      statusGroup.className = "status-group";
+
+      const trackStatus = {
+        trackNo,
+        vehicle: vehicleList[0],
+        variant: "en",
+        vehicleJpn: "",
+        vehicleEn: "",
+        type: "",
+        typeJpn: "",
+        typeEn: "",
+        remark: "",
+        status: "運転中",
+        imageName: "状況-運転中",
+        time: formatSystemTime() // 予定モード用の時刻保持
+      };
+      trackState[trackNo] = trackStatus;
+      trackSelects.set(trackNo, select);
+      select.value = trackStatus.vehicle;
+      trackState[trackNo].type = resolveVehicleType(trackState[trackNo].vehicle);
+      trackState[trackNo].remark = resolveVehicleRemark(trackState[trackNo].vehicle);
+      const initialVehicleAssets = resolveVehicleAssets(trackState[trackNo].vehicle);
+      trackState[trackNo].vehicleJpn = initialVehicleAssets.jpn;
+      trackState[trackNo].vehicleEn = initialVehicleAssets.en;
+      const initialTypeAssets = resolveTypeAssets(trackState[trackNo].type);
+      trackState[trackNo].typeJpn = initialTypeAssets.jpn;
+      trackState[trackNo].typeEn = initialTypeAssets.en;
+
+      select.addEventListener("change", () => {
+        applyVehicleToTrack(trackNo, select.value);
+      });
+
+      ["運転", "点検", "抑止", "終了"].forEach((status, idx) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = status;
+        if (idx === 0) btn.classList.add("active");
+
+        btn.addEventListener("click", () => {
+          [...statusGroup.children].forEach((child) => child.classList.remove("active"));
+          btn.classList.add("active");
+
+          const nextStatus = statusValueMap[status];
+          const nextImageName = `状況-${nextStatus}`;
+
+          trackState[trackNo].status = nextStatus;
+          trackState[trackNo].imageName = nextImageName;
+          trackState[trackNo].vehicle = select.value;
+
+          const layoutState = {
+            trackNo,
+            vehicle: select.value,
+            status: nextStatus,
+            imageName: nextImageName,
+            time: trackState[trackNo].time,
+            layout: "track-status"
+          };
+
+          window.layoutState = layoutState;
+          if (globalVariantState.currentMode === "live") {
+            renderStatusSprites();
           }
-          return `${category}-${key}.png`;
-        }
-      },
-      "渋谷南改札型": {
-        id: "渋谷南改札型",
-        name: "渋谷南改札型",
-        dir: "渋谷南改札型",
-        prefix: "渋谷南改札型",
-        layout: {
-          slotTypeWidth: 140,
-          slotDestWidth: 150,
-          slotCarsWidth: 85,
-          slotHeight: 48
-        },
-        resolveImg: function(category, key) {
-          if (!key) return "";
-          return `${this.dir}/${category}-${this.prefix}-${key}.png`;
-        }
-      }
-    };
+        });
 
-    let currentModelId = "default";
-
-    /* ==========================================================================
-       2. 全型共通 内容マスター (TRAIN_MASTER)
-       型に依存しない論理データ（車種名、各種別・行先・両数の識別キー、説明文など）
-       ========================================================================== */
-    let TRAIN_MASTER = {
-      "成田エクスプレス (E259系)": {
-        type_key: "特急成田エクスプレス15号",
-        type_text: "特急 成田EXP",
-        dest_key: "JO37成田空港",
-        dest_text: "成田空港",
-        cars_key: "6両",
-        cars_text: "6両",
-        desc: "特急成田エクスプレス（E259系）が走行中です。成田空港行きです。"
-      },
-      "東海道線 快速アクティー (E231系)": {
-        type_key: "オレンジ快速アクティー.単体大",
-        type_text: "快速アクティー",
-        dest_key: "JT21熱海",
-        dest_text: "熱海",
-        cars_key: "15両",
-        cars_text: "15両",
-        desc: "東海道線 快速アクティー（熱海行き）です。グリーン車連結の15両編成です。"
-      },
-      "宇都宮線 普通 (E233系)": {
-        type_key: "緑普通.宇都宮",
-        type_text: "普通",
-        dest_key: "JU宇都宮07宇都宮",
-        dest_text: "宇都宮",
-        cars_key: "10両",
-        cars_text: "10両",
-        desc: "宇都宮線 普通 宇都宮行きです。近郊型10両編成で運行中です。"
-      },
-      "湘南新宿ライン 特別快速 (E231系)": {
-        type_key: "スカイブルー特別快速.単体大",
-        type_text: "特別快速",
-        dest_key: "JT16小田原",
-        dest_text: "小田原",
-        cars_key: "15両",
-        cars_text: "15両",
-        desc: "湘南新宿ライン 特別快速 小田原行きです。高崎線・東海道線直通です。"
-      },
-      "横須賀線 普通 (E235系/E217系)": {
-        type_key: "緑普通.横須賀",
-        type_text: "普通",
-        dest_key: "JO01久里浜",
-        dest_text: "久里浜",
-        cars_key: "11両",
-        cars_text: "11両",
-        desc: "横須賀線 普通 久里浜行きです。11両編成で運行中です。"
-      },
-      "相鉄直通線 各駅停車 (12000系/E233系)": {
-        type_key: "相鉄線",
-        type_text: "各駅停車",
-        dest_key: "海老名",
-        dest_text: "海老名",
-        cars_key: "10両",
-        cars_text: "10両",
-        desc: "相鉄線直通 各駅停車 海老名行きです。新宿方面からの直通列車です。"
-      },
-      "特急 湘南 (E257系)": {
-        type_key: "特急湘南21号",
-        type_text: "特急 湘南",
-        dest_key: "JT14Odawara",
-        dest_text: "小田原",
-        cars_key: "9両",
-        cars_text: "9両",
-        desc: "特急 湘南号 小田原行きです。快適なリクライニングシート車両です。"
-      },
-      "回送 / 試運転": {
-        type_key: "グレー普通.単体大",
-        type_text: "回送",
-        dest_key: "JS17大崎",
-        dest_text: "回送",
-        cars_key: "4両",
-        cars_text: "4両",
-        desc: "回送列車です。車内点検および試運転を実施しています。"
-      }
-    };
-
-    const STATUS_MAP = {
-      "running": { name: "● 走行中", class: "st-running" },
-      "stopped": { name: "■ 停車中", class: "st-stopped" },
-      "adjusting": { name: "▲ 調整中", class: "st-adjusting" },
-      "suspended": { name: "× 見合わせ", class: "st-suspended" }
-    };
-
-    // 初期番線状態（実況モード）
-    const trackStates = [
-      { track: 1, train: "成田エクスプレス (E259系)", status: "running" },
-      { track: 2, train: "東海道線 快速アクティー (E231系)", status: "running" },
-      { track: 3, train: "宇都宮線 普通 (E233系)", status: "running" },
-      { track: 4, train: "湘南新宿ライン 特別快速 (E231系)", status: "running" }
-    ];
-
-    // ローカルストレージにカスタム車両マスターがあれば適用
-    const savedMaster = localStorage.getItem("custom_train_master");
-    if (savedMaster) {
-      try {
-        TRAIN_MASTER = JSON.parse(savedMaster);
-      } catch(e) {
-        console.error("カスタムTRAIN_MASTERの読み込みに失敗しました", e);
-      }
-    }
-
-    // 型選択セレクターの初期化
-    function initModelSelector() {
-      const select = document.getElementById("modelSelect");
-      select.innerHTML = "";
-      Object.keys(MODEL_MASTER).forEach(key => {
-        const opt = document.createElement("option");
-        opt.value = key;
-        opt.textContent = MODEL_MASTER[key].name;
-        if (key === currentModelId) opt.selected = true;
-        select.appendChild(opt);
+        statusGroup.appendChild(btn);
       });
-    }
 
-    // 型変更ハンドラー
-    function changeModel(modelId) {
-      if (MODEL_MASTER[modelId]) {
-        currentModelId = modelId;
-        applyModelLayout();
-        renderBoard();
+      // 予定モード用の時刻入力UI
+      const timeGroup = document.createElement("div");
+      timeGroup.className = "time-input-group";
+      timeGroup.style.display = "none"; // 初期は実況モードのため非表示
+
+      const timeLabel = document.createElement("label");
+      timeLabel.textContent = "発車時刻:";
+      const timeInput = document.createElement("input");
+      timeInput.type = "time";
+      timeInput.value = trackStatus.time;
+      scheduleUi.timeInputs.set(trackNo, timeInput);
+      timeInput.addEventListener("input", () => {
+        if (window.ScheduleStore?.state.current) {
+          const eventId = trackState[trackNo].scheduleEventId;
+          const updated = eventId && window.ScheduleStore.updateEventTime(trackNo, eventId, timeInput.value);
+          if (!updated) window.ScheduleStore.addEvent(trackNo, timeInput.value);
+          refreshScheduleDisplay();
+          return;
+        }
+        trackState[trackNo].time = timeInput.value;
+        if (window.layoutState && window.layoutState.trackNo === trackNo) {
+          window.layoutState.time = timeInput.value;
+        }
+        if (globalVariantState.currentMode === "schedule") {
+          renderTimeSprites();
+        }
+      });
+
+      timeGroup.appendChild(timeLabel);
+      timeGroup.appendChild(timeInput);
+
+      row.appendChild(labelRow);
+      row.appendChild(statusGroup);
+      row.appendChild(timeGroup);
+      controlPanel.appendChild(row);
+    });
+
+    const renderVehicleSprites = () => {
+      document.querySelectorAll(".vehicle-sprite").forEach((el) => el.remove());
+      if (!currentStation) return;
+
+      const bgWidth = currentStation.panels?.upper?.widthCm || 33.64;
+      const bgHeight = currentStation.panels?.upper?.heightCm || 8.45;
+
+      trackList.forEach((trackNo) => {
+        const track = trackState[trackNo];
+        const trackDef = currentStation.tracks?.find((t) => t.trackNo === trackNo);
+        if (!track || !trackDef) return;
+        if (globalVariantState.currentMode === "schedule" && track.scheduleEmpty) return;
+
+        const variant = track.variant || "en";
+        const vehiclePos = trackDef.positions?.vehicle?.[variant];
+        if (!vehiclePos) return;
+
+        const panel = trackDef.panel === "upper" ? topPanel : bottomPanel;
+        const sprite = document.createElement("div");
+        sprite.className = "vehicle-sprite";
+
+        const baseHeightCm = currentStation.defaultSizes?.vehicle?.[variant]?.heightCm || (variant === "jp" ? 0.8 : 0.7);
+        const isHikarieEnException = (track.vehicle || "") === "5050系Hikarie" && variant === "en";
+        const heightCm = isHikarieEnException ? baseHeightCm : baseHeightCm * 1.2;
+        const yOffset = 0;
+        const xRatio = vehiclePos.x / bgWidth;
+        const yRatio = (vehiclePos.y + yOffset) / bgHeight;
+        const heightRatio = heightCm / bgHeight;
+        const assetCandidates = Array.isArray(variant === "jp" ? track.vehicleJpn : track.vehicleEn)
+          ? (variant === "jp" ? track.vehicleJpn : track.vehicleEn)
+          : [(variant === "jp" ? track.vehicleJpn : track.vehicleEn)];
+
+        resolveExistingAssetUrl(assetCandidates).then((asset) => {
+          const img = new Image();
+          img.onload = () => {
+            const aspect = img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : 1;
+            const widthPx = (heightRatio * panelHeight) * aspect;
+            sprite.style.left = `${xRatio * panelWidth}px`;
+            sprite.style.top = `${yRatio * panelHeight}px`;
+            sprite.style.width = `${widthPx}px`;
+            sprite.style.height = `${heightRatio * panelHeight}px`;
+            sprite.style.backgroundImage = `url('${encodeAssetUrl(asset)}')`;
+            sprite.style.backgroundRepeat = "no-repeat";
+            sprite.style.backgroundSize = "contain";
+            sprite.style.backgroundPosition = "center center";
+          };
+          img.onerror = () => {
+            sprite.style.left = `${xRatio * panelWidth}px`;
+            sprite.style.top = `${yRatio * panelHeight}px`;
+            sprite.style.width = `${heightRatio * panelHeight}px`;
+            sprite.style.height = `${heightRatio * panelHeight}px`;
+            sprite.style.backgroundImage = "none";
+          };
+          img.src = encodeAssetUrl(asset);
+        });
+
+        panel.appendChild(sprite);
+      });
+    };
+
+    const parseRemarkStyleTokens = (text) => {
+      const segments = [];
+      let currentColor = "";
+      let currentBold = false;
+      let currentBlink = false;
+      let buffer = "";
+      let index = 0;
+
+      while (index < text.length) {
+        const ch = text[index];
+
+        if (ch === "§") {
+          if (buffer) {
+            segments.push({ text: buffer, color: currentColor, bold: currentBold, blink: currentBlink });
+            buffer = "";
+          }
+
+          const next = text[index + 1] || "";
+          if (next === "b" || next === "B") {
+            currentBold = true;
+            index += 2;
+            continue;
+          }
+          if (next === "n" || next === "N") {
+            currentBold = false;
+            currentColor = "";
+            currentBlink = false;
+            index += 2;
+            continue;
+          }
+          if (next === "c" || next === "C") {
+            const colorValue = text.slice(index + 2, index + 9).trim();
+            if (/^#[0-9a-fA-F]{3,8}$/.test(colorValue)) {
+              currentColor = colorValue;
+              index += 2 + colorValue.length;
+              continue;
+            }
+          }
+          if (next === "f" || next === "F") {
+            currentBlink = true;
+            index += 2;
+            continue;
+          }
+
+          buffer += ch;
+          index += 1;
+          continue;
+        }
+
+        buffer += ch;
+        index += 1;
       }
-    }
 
-    // 型に合わせたCSSレイアウト変数の適用
-    function applyModelLayout() {
-      const model = MODEL_MASTER[currentModelId];
-      if (!model || !model.layout) return;
-
-      if (model.layout.slotTypeWidth) {
-        document.querySelectorAll('.slot-type').forEach(el => el.style.width = model.layout.slotTypeWidth + 'px');
+      if (buffer) {
+        segments.push({ text: buffer, color: currentColor, bold: currentBold, blink: currentBlink });
       }
-      if (model.layout.slotDestWidth) {
-        document.querySelectorAll('.slot-dest').forEach(el => el.style.width = model.layout.slotDestWidth + 'px');
-      }
-      if (model.layout.slotCarsWidth) {
-        document.querySelectorAll('.slot-cars').forEach(el => el.style.width = model.layout.slotCarsWidth + 'px');
-      }
-    }
 
-    function createSlotHTML(category, key, fallbackText, slotClass) {
-      const model = MODEL_MASTER[currentModelId] || MODEL_MASTER["default"];
-      const imgSrc = model.resolveImg(category, key);
-      const fallbackImgSrc = MODEL_MASTER["default"].resolveImg(category, key);
+      return segments.length ? segments : [{ text, color: "", bold: false, blink: false }];
+    };
 
-      return `
-        <div class="led-slot ${slotClass}">
-          <img src="${imgSrc}" 
-               onerror="if(this.src !== '${fallbackImgSrc}' && '${imgSrc}' !== '${fallbackImgSrc}') { this.src='${fallbackImgSrc}'; } else { this.style.display='none'; this.nextElementSibling.style.display='block'; }" 
-               alt="${fallbackText}" />
-          <span class="led-fallback-text" style="display:none;">${fallbackText}</span>
-        </div>
+    const buildRemarkScrollAnimation = (distancePx, durationSeconds) => {
+      const name = `remark-scroll-${Math.random().toString(36).slice(2, 9)}`;
+      const style = document.createElement("style");
+      style.textContent = `
+        @keyframes ${name} {
+          0% {
+            opacity: 1;
+            transform: translateX(0) translateY(-50%);
+          }
+          100% {
+            opacity: 1;
+            transform: translateX(-${distancePx}px) translateY(-50%);
+          }
+        }
       `;
-    }
+      document.head.appendChild(style);
+      return { name, durationSeconds };
+    };
 
-    function renderBoard() {
-      const container = document.getElementById("boardContainer");
-      container.innerHTML = "";
+    const renderRemarkSprites = () => {
+      document.querySelectorAll(".remark-sprite").forEach((el) => el.remove());
+      if (!currentStation) return;
 
-      trackStates.forEach((state, index) => {
-        const trainData = TRAIN_MASTER[state.train] || {};
-        const stData = STATUS_MAP[state.status] || STATUS_MAP.running;
+      const bgWidth = currentStation.panels?.upper?.widthCm || 33.64;
+      const bgHeight = currentStation.panels?.upper?.heightCm || 8.45;
 
-        const row = document.createElement("div");
-        row.className = "track-row";
-        row.innerHTML = `
-          <div class="track-badge">${state.track}番線</div>
-          ${createSlotHTML("種別", trainData.type_key, trainData.type_text, "slot-type")}
-          ${createSlotHTML("行先", trainData.dest_key, trainData.dest_text, "slot-dest")}
-          ${createSlotHTML("編成", trainData.cars_key, trainData.cars_text, "slot-cars")}
-          <div class="status-badge ${stData.class}">${stData.name}</div>
-          
-          <select class="train-select" onchange="changeTrain(${index}, this.value)">
-            ${Object.keys(TRAIN_MASTER).map(key => `
-              <option value="${key}" ${key === state.train ? "selected" : ""}>${key}</option>
-            `).join("")}
-          </select>
+      trackList.forEach((trackNo) => {
+        const track = trackState[trackNo];
+        const trackDef = currentStation.tracks?.find((t) => t.trackNo === trackNo);
+        if (!track || !trackDef || !track.remark) return;
+        if (globalVariantState.currentMode === "schedule" && track.scheduleEmpty) return;
 
-          <div class="status-btn-group">
-            <button class="btn-status ${state.status === 'running' ? 'active' : ''}" onclick="changeStatus(${index}, 'running')">走行中</button>
-            <button class="btn-status ${state.status === 'stopped' ? 'active' : ''}" onclick="changeStatus(${index}, 'stopped')">停車中</button>
-            <button class="btn-status ${state.status === 'adjusting' ? 'active' : ''}" onclick="changeStatus(${index}, 'adjusting')">調整中</button>
-            <button class="btn-status ${state.status === 'suspended' ? 'active' : ''}" onclick="changeStatus(${index}, 'suspended')">見合わせ</button>
-          </div>
-        `;
-        container.appendChild(row);
+        const remarkPos = trackDef.positions?.remark;
+        if (!remarkPos) return;
+
+        const panel = trackDef.panel === "upper" ? topPanel : bottomPanel;
+        const box = document.createElement("div");
+        box.className = "remark-sprite";
+
+        const xRatio = remarkPos.x / bgWidth;
+        const yRatio = remarkPos.y / bgHeight;
+        const widthRatio = (remarkPos.widthCm || currentStation.defaultSizes?.remark?.widthCm || 18.25) / bgWidth;
+        const heightRatio = (remarkPos.heightCm || currentStation.defaultSizes?.remark?.heightCm || 0.8) / bgHeight;
+
+        const text = document.createElement("div");
+        text.className = "remark-text";
+        text.style.fontSize = "0.8cm";
+        text.replaceChildren();
+
+        const renderSegments = (sourceText) => {
+          const segments = parseRemarkStyleTokens(sourceText);
+          segments.forEach((segment) => {
+            const span = document.createElement("span");
+            span.textContent = segment.text;
+            span.style.color = segment.color || "#fff";
+            span.style.fontWeight = segment.bold ? "900" : "400";
+            if (segment.blink) {
+              span.style.animation = "remark-blink 0.7s steps(2, end) infinite";
+              span.style.display = "inline-block";
+            }
+            text.appendChild(span);
+          });
+        };
+
+        renderSegments(track.remark);
+        renderSegments("  ");
+        renderSegments(track.remark);
+
+        const boxWidthPx = widthRatio * panelWidth;
+        box.style.left = `${xRatio * panelWidth}px`;
+        box.style.top = `${yRatio * panelHeight}px`;
+        box.style.width = `${boxWidthPx}px`;
+        box.style.height = `${heightRatio * panelHeight}px`;
+
+        box.appendChild(text);
+        panel.appendChild(box);
+
+        const textLengthPx = Math.max(text.scrollWidth || 0, 0);
+        const travelDistancePx = Math.max(
+          textLengthPx + boxWidthPx * REMARK_SCROLL_CONFIG.travelDistancePaddingRatio,
+          boxWidthPx * 1.2
+        );
+        const animation = buildRemarkScrollAnimation(
+          travelDistancePx,
+          Number(REMARK_SCROLL_CONFIG.durationSeconds) || 75
+        );
+
+        text.style.animationName = animation.name;
+        text.style.animationDuration = `${animation.durationSeconds}s`;
+        text.style.animationTimingFunction = "linear";
+        text.style.animationIterationCount = "infinite";
+        text.style.paddingRight = "2em";
       });
+    };
 
-      applyModelLayout();
-      updateTelop();
-    }
+    const renderStatusSprites = () => {
+      document.querySelectorAll(".status-sprite").forEach((el) => el.remove());
+      if (globalVariantState.currentMode !== "live" || !currentStation) return;
 
-    function changeTrain(index, trainName) {
-      trackStates[index].train = trainName;
-      renderBoard();
-    }
+      const bgWidth = currentStation.panels?.upper?.widthCm || 33.64;
+      const bgHeight = currentStation.panels?.upper?.heightCm || 8.45;
 
-    function changeStatus(index, status) {
-      trackStates[index].status = status;
-      renderBoard();
-    }
+      trackList.forEach((trackNo) => {
+        const track = trackState[trackNo];
+        const trackDef = currentStation.tracks?.find((t) => t.trackNo === trackNo);
+        if (!track || !trackDef) return;
+        if (globalVariantState.currentMode === "schedule" && track.scheduleEmpty) return;
 
-    function updateTelop() {
-      const messages = [];
-      trackStates.forEach(state => {
-        const train = TRAIN_MASTER[state.train];
-        if (!train) return;
-        if (state.status === "running") {
-          messages.push(`【${state.track}番線 走行中】${train.desc}`);
-        } else if (state.status === "stopped") {
-          messages.push(`【${state.track}番線 停車中】${state.train} は現在ホームに停車中です。`);
-        } else if (state.status === "adjusting") {
-          messages.push(`【${state.track}番線 調整中】車両点検・調整作業を行っております。`);
-        } else if (state.status === "suspended") {
-          messages.push(`【${state.track}番線 見合わせ】安全確認のため運行を見合わせております。`);
+        const statusPos = trackDef.positions?.status;
+        if (!statusPos) return;
+
+        const panel = trackDef.panel === "upper" ? topPanel : bottomPanel;
+        const assetCandidates = Array.isArray(statusAssetMap[track.status])
+          ? statusAssetMap[track.status]
+          : [`${track.imageName}.png`];
+        const sprite = document.createElement("div");
+        sprite.className = "status-sprite";
+
+        const size = currentStation.defaultSizes?.status || { widthCm: 3.2, heightCm: 0.8 };
+        const xRatio = statusPos.x / bgWidth;
+        const yRatio = statusPos.y / bgHeight;
+        const widthRatio = size.widthCm / bgWidth;
+        const heightRatio = size.heightCm / bgHeight;
+
+        sprite.style.left = `${xRatio * panelWidth}px`;
+        sprite.style.top = `${yRatio * panelHeight}px`;
+        sprite.style.width = `${widthRatio * panelWidth}px`;
+        sprite.style.height = `${heightRatio * panelHeight}px`;
+
+        resolveExistingAssetUrl(assetCandidates).then((asset) => {
+          if (asset) sprite.style.backgroundImage = `url('${encodeAssetUrl(asset)}')`;
+        });
+
+        panel.appendChild(sprite);
+      });
+    };
+
+    const resolveTimeDigitAsset = (char) => {
+      const charName = char === ":" ? "区切り" : char;
+      const assetDir = currentStation?.assetDir || "渋谷南改札口型";
+      const series = currentStation?.seriesName || "渋谷南改札口型";
+      return [
+        `${assetDir}/時刻-シリーズ/時刻-${series}-${series}-${charName}.png`,
+        `${assetDir}/時刻-シリーズ/時刻-${series}-${charName}.png`,
+        `${assetDir}/時刻-シリーズ/時刻-${charName}.png`,
+        `時刻-${series}-${series}-${charName}.png`,
+        `時刻-${series}-${charName}.png`,
+        `時刻-${charName}.png`
+      ];
+    };
+
+    const renderTimeSprites = () => {
+      document.querySelectorAll(".time-digit-sprite").forEach((el) => el.remove());
+      if (globalVariantState.currentMode !== "schedule" || !currentStation) return;
+
+      const bgWidth = currentStation.panels?.upper?.widthCm || 33.64;
+      const bgHeight = currentStation.panels?.upper?.heightCm || 8.45;
+
+      trackList.forEach((trackNo) => {
+        const track = trackState[trackNo];
+        const trackDef = currentStation.tracks?.find((t) => t.trackNo === trackNo);
+        if (!track || !trackDef) return;
+        if (globalVariantState.currentMode === "schedule" && track.scheduleEmpty) return;
+
+        const timeDigits = trackDef.positions?.timeDigits;
+        if (!timeDigits) return;
+
+        const panel = trackDef.panel === "upper" ? topPanel : bottomPanel;
+        const timeStr = String(track.time || "10:00").trim();
+        const parts = timeStr.split(":");
+        const hh = (parts[0] || "10").padStart(2, "0");
+        const mm = (parts[1] || "00").padStart(2, "0");
+
+        const digits = [
+          { key: "h1", char: hh[0] },
+          { key: "h2", char: hh[1] },
+          { key: "colon", char: ":" },
+          { key: "m1", char: mm[0] },
+          { key: "m2", char: mm[1] }
+        ];
+
+        digits.forEach(({ key, char }) => {
+          const digitPos = timeDigits[key];
+          if (!digitPos) return;
+
+          const sprite = document.createElement("div");
+          sprite.className = "time-digit-sprite";
+
+          const xRatio = digitPos.x / bgWidth;
+          const yRatio = digitPos.y / bgHeight;
+          const widthCm = digitPos.widthCm || (char === ":" ? 0.2 : 0.56);
+          const heightCm = digitPos.heightCm || (char === ":" ? 0.52 : 0.8);
+          const widthRatio = widthCm / bgWidth;
+          const heightRatio = heightCm / bgHeight;
+
+          sprite.style.left = `${xRatio * panelWidth}px`;
+          sprite.style.top = `${yRatio * panelHeight}px`;
+          sprite.style.width = `${widthRatio * panelWidth}px`;
+          sprite.style.height = `${heightRatio * panelHeight}px`;
+
+          const assetCandidates = resolveTimeDigitAsset(char);
+          resolveExistingAssetUrl(assetCandidates).then((asset) => {
+            if (asset) sprite.style.backgroundImage = `url('${encodeAssetUrl(asset)}')`;
+          });
+
+          panel.appendChild(sprite);
+        });
+      });
+    };
+
+    const renderNoScheduleLabels = () => {
+      document.querySelectorAll(".no-schedule-label").forEach((el) => el.remove());
+      if (globalVariantState.currentMode !== "schedule" || !window.ScheduleStore?.state.current || !currentStation) return;
+
+      const bgWidth = currentStation.panels?.upper?.widthCm || 33.64;
+      const bgHeight = currentStation.panels?.upper?.heightCm || 8.45;
+      trackList.forEach((trackNo) => {
+        const track = trackState[trackNo];
+        const trackDef = currentStation.tracks?.find((item) => item.trackNo === trackNo);
+        const position = trackDef?.positions?.timeDigits?.h1;
+        if (!track?.scheduleEmpty || !position) return;
+        const panel = trackDef.panel === "upper" ? topPanel : bottomPanel;
+        const label = document.createElement("div");
+        label.className = "no-schedule-label";
+        label.textContent = track.noScheduleMessage || "予定なし";
+        label.style.left = `${(position.x / bgWidth) * panelWidth}px`;
+        label.style.top = `${(position.y / bgHeight) * panelHeight}px`;
+        label.style.width = `${(3.4 / bgWidth) * panelWidth}px`;
+        label.style.height = `${(1.0 / bgHeight) * panelHeight}px`;
+        panel.appendChild(label);
+      });
+    };
+
+    const renderTypeSprites = () => {
+      document.querySelectorAll(".type-sprite").forEach((el) => el.remove());
+      if (!currentStation) return;
+
+      const bgWidth = currentStation.panels?.upper?.widthCm || 33.64;
+      const bgHeight = currentStation.panels?.upper?.heightCm || 8.45;
+
+      trackList.forEach((trackNo) => {
+        const track = trackState[trackNo];
+        const trackDef = currentStation.tracks?.find((t) => t.trackNo === trackNo);
+        if (!track || !trackDef) return;
+        if (globalVariantState.currentMode === "schedule" && track.scheduleEmpty) return;
+
+        const variant = track.variant || globalVariantState.currentVariant || "en";
+        const assetCandidates = Array.isArray(variant === "jp" ? track.typeJpn : track.typeEn)
+          ? (variant === "jp" ? track.typeJpn : track.typeEn)
+          : [(variant === "jp" ? track.typeJpn : track.typeEn)];
+        if (!assetCandidates.length || !assetCandidates.some(Boolean)) return;
+
+        const panel = trackDef.panel === "upper" ? topPanel : bottomPanel;
+        const sprite = document.createElement("div");
+        sprite.className = "type-sprite";
+
+        const size = resolveTypeSpriteSize(track.type);
+        const offset = resolveTypeDisplayOffset(track.type);
+
+        // 特殊種別の番線別座標オーバーライド確認
+        let typePos = trackDef.positions?.type;
+        const matchedRule = currentStation.specialOverrides?.typeRules?.find((r) => track.type?.includes(r.pattern));
+        if (matchedRule?.trackPositions?.[trackNo]) {
+          typePos = matchedRule.trackPositions[trackNo];
         }
+
+        if (!typePos) return;
+
+        const xRatio = typePos.x / bgWidth;
+        const yRatio = (typePos.y + offset.yCm) / bgHeight;
+        const widthRatio = size.widthCm / bgWidth;
+        const heightRatio = size.heightCm / bgHeight;
+
+        sprite.style.left = `${xRatio * panelWidth}px`;
+        sprite.style.top = `${yRatio * panelHeight}px`;
+        sprite.style.width = `${widthRatio * panelWidth}px`;
+        sprite.style.height = `${heightRatio * panelHeight}px`;
+
+        resolveExistingAssetUrl(assetCandidates).then((asset) => {
+          if (asset) sprite.style.backgroundImage = `url('${encodeAssetUrl(asset)}')`;
+        });
+
+        panel.appendChild(sprite);
       });
-      messages.push("【ご案内】模型には手を触れず、黄色い線の外側からご鑑賞ください。");
+    };
 
-      const telopElem = document.getElementById("telopText");
-      telopElem.textContent = messages.join("　◆　");
-    }
+    const renderAllSprites = () => {
+      renderStatusSprites();
+      renderTimeSprites();
+      renderNoScheduleLabels();
+      renderTypeSprites();
+      renderVehicleSprites();
+      renderRemarkSprites();
+    };
 
-    // スクロールテロップアニメーション
-    const telopElem = document.getElementById("telopText");
-    let pos = window.innerWidth;
-    function animateTelop() {
-      pos -= 2.2;
-      if (pos < -telopElem.offsetWidth) {
-        pos = window.innerWidth;
+    const applyVehicleToTrack = (trackNo, vehicleName, { render = true } = {}) => {
+      const track = trackState[trackNo];
+      if (!track || !vehicleName || !vehicleList.includes(vehicleName)) return false;
+      track.vehicle = vehicleName;
+      track.type = resolveVehicleType(vehicleName);
+      track.remark = resolveVehicleRemark(vehicleName);
+      const vehicleAssets = resolveVehicleAssets(vehicleName);
+      track.vehicleJpn = vehicleAssets.jpn;
+      track.vehicleEn = vehicleAssets.en;
+      const typeAssets = resolveTypeAssets(track.type);
+      track.typeJpn = typeAssets.jpn;
+      track.typeEn = typeAssets.en;
+      const select = trackSelects.get(trackNo);
+      if (select) select.value = vehicleName;
+      if (render) renderAllSprites();
+      return true;
+    };
+
+    const activeScheduleTime = () => scheduleUi.systemClock ? formatSystemTime() : (scheduleUi.clockInput?.value || formatSystemTime());
+
+    const setScheduleStatus = (message, isError = false) => {
+      if (!scheduleUi.status) return;
+      scheduleUi.status.textContent = message;
+      scheduleUi.status.classList.toggle("error", isError);
+    };
+
+    const refreshScheduleDisplay = () => {
+      const now = activeScheduleTime();
+      if (!now) return;
+
+      if (scheduleUi.clockInput && scheduleUi.systemClock) {
+        scheduleUi.clockInput.value = now;
       }
-      telopElem.style.transform = `translateX(${pos}px)`;
-      requestAnimationFrame(animateTelop);
+
+      const store = window.ScheduleStore;
+      if (store?.state.current) {
+        // 時刻表JSONが読み込まれている場合の同期処理
+        trackList.forEach((trackNo) => {
+          const track = trackState[trackNo];
+          const event = store.getNextEvent(trackNo, now);
+          const input = scheduleUi.timeInputs.get(trackNo);
+          if (event) {
+            track.scheduleEventId = event.id;
+            track.scheduleEmpty = false;
+            track.time = event.time;
+            if (input) input.value = event.time;
+            if (event.vehicle) applyVehicleToTrack(trackNo, event.vehicle, { render: false });
+            window.dispatchEvent(new CustomEvent("schedule:displaychange", { detail: { trackNo, event, now } }));
+          } else {
+            track.scheduleEventId = null;
+            track.scheduleEmpty = true;
+            track.noScheduleMessage = store.state.current.tracks.find((item) => Number(item.trackNo) === trackNo)?.noSchedule?.message || "予定なし";
+            track.time = "";
+            if (input) input.value = "";
+            window.dispatchEvent(new CustomEvent("schedule:empty", { detail: { trackNo, message: track.noScheduleMessage, now } }));
+          }
+        });
+        const syncLabel = scheduleUi.systemClock ? "PC時刻同期" : "手動指定";
+        setScheduleStatus(`${store.state.loadedFileName || "時刻表"} 運用中（${syncLabel} ${now}）`);
+      } else {
+        // 時刻表JSON未読み込み時の手動/PC時刻運用
+        if (scheduleUi.systemClock) {
+          // PC時刻同期が有効な場合、全番線の発車時刻を現在時刻に同期
+          trackList.forEach((trackNo) => {
+            const track = trackState[trackNo];
+            if (track) {
+              track.time = now;
+              track.scheduleEmpty = false;
+              const input = scheduleUi.timeInputs.get(trackNo);
+              if (input) input.value = now;
+            }
+          });
+        }
+        const syncLabel = scheduleUi.systemClock ? "PC時刻に連動中" : "手動時刻指定中";
+        setScheduleStatus(`基準時刻: ${now}（${syncLabel}）`);
+      }
+
+      if (globalVariantState.currentMode === "schedule") {
+        renderTimeSprites();
+        renderNoScheduleLabels();
+      }
+    };
+
+    const scheduleContext = () => ({
+      stationId: currentStation?.id,
+      trackNumbers: currentStation?.tracks?.map((track) => track.trackNo) || trackList,
+      vehicleNames: vehicleList
+    });
+
+    const loadScheduleFile = async (file) => {
+      if (!file || !scheduleUi.ready) return;
+      try {
+        const document = JSON.parse(await file.text());
+        const result = window.ScheduleStore.load(document, scheduleContext(), file.name);
+        if (result.errors.length) {
+          setScheduleStatus(result.errors.join(" "), true);
+          return;
+        }
+        setDisplayMode("schedule");
+        refreshScheduleDisplay();
+      } catch (error) {
+        setScheduleStatus(`時刻表JSONを読み込めませんでした: ${error.message}`, true);
+      } finally {
+        scheduleFileInput.value = "";
+      }
+    };
+
+    const resetScheduleToRaw = () => {
+      if (!window.ScheduleStore.reset()) {
+        setScheduleStatus("復元するraw時刻表がありません。", true);
+        return;
+      }
+      refreshScheduleDisplay();
+    };
+
+    const exportCurrentSchedule = () => {
+      const current = window.ScheduleStore?.state.current;
+      if (!current) {
+        setScheduleStatus("書き出す時刻表がありません。", true);
+        return;
+      }
+      const blob = new Blob([JSON.stringify(current, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = window.ScheduleStore.state.loadedFileName || "train-board-schedule.json";
+      anchor.click();
+      URL.revokeObjectURL(url);
+    };
+
+    // 初期化ロード (station_types.json と vehicle_catalog.json を非同期読込)
+    Promise.all([
+      fetch("station_types.json").then((r) => r.json()),
+      fetch("vehicle_catalog.json").then((r) => r.json())
+    ])
+      .then(([stations, catalog]) => {
+        catalog.forEach((item) => {
+          vehicleCatalog.push(item);
+          vehicleList.push(item.vehicle);
+        });
+
+        // 最初の駅型（01: 渋谷南改札型）を適用
+        const station = stations[0];
+        applyStationLayout(station);
+
+        trackList.forEach((trackNo) => {
+          const currentVehicle = trackState[trackNo]?.vehicle || vehicleList[0];
+          trackState[trackNo].vehicle = currentVehicle;
+          trackState[trackNo].remark = resolveVehicleRemark(currentVehicle);
+          const vehicleAssets = resolveVehicleAssets(currentVehicle);
+          trackState[trackNo].vehicleJpn = vehicleAssets.jpn;
+          trackState[trackNo].vehicleEn = vehicleAssets.en;
+          trackState[trackNo].type = resolveVehicleType(currentVehicle);
+          const typeAssets = resolveTypeAssets(trackState[trackNo].type);
+          trackState[trackNo].typeJpn = typeAssets.jpn;
+          trackState[trackNo].typeEn = typeAssets.en;
+        });
+
+        const selects = document.querySelectorAll("select");
+        selects.forEach((selectEl) => {
+          vehicleList.forEach((name) => {
+            const option = document.createElement("option");
+            option.value = name;
+            option.textContent = name;
+            selectEl.appendChild(option);
+          });
+          if (vehicleList.length > 0) {
+            selectEl.value = vehicleList[0];
+          }
+        });
+
+        scheduleUi.ready = true;
+        refreshScheduleDisplay();
+        renderAllSprites();
+      })
+      .catch((error) => {
+        console.error("データの読み込みに失敗しました", error);
+      });
+
+    controlPanel.appendChild(globalControls);
+    root.appendChild(controlPanel);
+
+    trackList.forEach((trackNo) => {
+      const track = trackState[trackNo];
+      if (track) {
+        track.variant = globalVariantState.currentVariant;
+      }
+    });
+
+    scheduleVariantCycle();
+
+    // 基準時刻の初期化
+    if (scheduleUi.clockInput) {
+      scheduleUi.clockInput.value = formatSystemTime();
     }
 
-    // 初期化実行
-    initModelSelector();
-    renderBoard();
-    requestAnimationFrame(animateTelop);
+    // 1秒ごとの定期タイマー（時計更新および自動同期）
+    setInterval(() => {
+      const now = formatSystemTime();
+      if (scheduleUi.systemClock && scheduleUi.clockInput && scheduleUi.clockInput.value !== now) {
+        scheduleUi.clockInput.value = now;
+      }
+      if (scheduleUi.autoUpdate && scheduleUi.systemClock) {
+        refreshScheduleDisplay();
+      }
+    }, 1000);
+
+    window.trackState = trackState;
+    window.vehicleCatalog = vehicleCatalog;
   </script>
 </body>
 </html>
