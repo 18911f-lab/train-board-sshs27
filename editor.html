@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nゲージ 車両カタログ＆備考テロップ JSONビルダー</title>
+  <title>Nゲージ 車両カタログ & 備考テロップ JSONビルダー</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@500;700&display=swap');
 
@@ -138,49 +138,10 @@
       border-color: var(--accent-color);
     }
 
-    /* 種別画像ピッカー＆プレビュー */
     .candidate-selector-row {
       display: flex;
       gap: 8px;
       margin-top: 6px;
-    }
-
-    .candidate-preview-area {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 10px;
-      background: #000;
-      border: 1px solid var(--panel-border);
-      border-radius: 6px;
-      padding: 10px;
-      min-height: 52px;
-      align-items: center;
-    }
-
-    .candidate-thumb-box {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background: #161b22;
-      border: 1px solid #30363d;
-      border-radius: 4px;
-      padding: 4px 8px;
-      gap: 4px;
-    }
-
-    .candidate-thumb-box img {
-      max-height: 36px;
-      object-fit: contain;
-    }
-
-    .candidate-thumb-label {
-      font-size: 10px;
-      color: #8b949e;
-      max-width: 120px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
     }
 
     /* Word風 書式ツールバー */
@@ -328,12 +289,6 @@
       color: #8b949e;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-    }
-
-    .tag img {
-      max-height: 20px;
-      object-fit: contain;
     }
 
     .json-preview {
@@ -366,8 +321,9 @@
   </header>
 
   <div class="notice">
-    💡 <b>標準JSON自動読み込み機能</b>: 本システムは標準の `vehicle_catalog.json` データを直接読み込んで初期化します。<br>
-    各種画像のキーワード選択ピッカーにより、実際の種別LED画像サムネイルをリアルタイムで確認しながら追加・編集いただけます。
+    💡 <b>型（駅）非依存の共通JSON設計</b>:<br>
+    ・`candidates`（種別候補）は全駅型共通の識別キーです。ドロップダウンから選択して簡単に候補をピックできます。<br>
+    ・実際の画像パス補完は `index.html` 側の選択型（駅）に合わせて自動的に解決される設計となっています。
   </div>
 
   <div class="grid-container">
@@ -383,39 +339,40 @@
             <input type="text" id="v_vehicle" placeholder="例: 103系, E259系, E233系3000" required>
           </div>
 
-          <!-- 種別画像候補入力 ＆ ピッカー ＆ リアルタイムサムネイル -->
+          <!-- 種別画像候補プルダウンピック -->
           <div class="form-group">
-            <label>種別画像候補 (candidates)</label>
-            <input type="text" id="v_candidates" placeholder="例: 特急成田エクスプレス15号, オレンジ快速.単体大" oninput="updateCandidatePreviews()" required>
+            <label>種別画像候補 (candidates: 型非依存の共通キー)</label>
+            <input type="text" id="v_candidates" placeholder="例: 特急成田エクスプレス15号, オレンジ快速.単体大" required>
             
             <div class="candidate-selector-row">
               <select id="presetCandidateSelect">
-                <option value="">-- プロジェクト内に存在する種別画像キーワードを選択 --</option>
+                <option value="">-- 全駅型共通の種別キーワード一覧から選択 --</option>
                 <option value="特急成田エクスプレス15号">特急成田エクスプレス15号</option>
                 <option value="オレンジ快速.単体大">オレンジ快速.単体大</option>
                 <option value="オレンジ快速.宇都宮">オレンジ快速.宇都宮</option>
                 <option value="オレンジ快速.高崎">オレンジ快速.高崎</option>
                 <option value="オレンジ快速.東海道">オレンジ快速.東海道</option>
                 <option value="オレンジ快速アクティー.単体大">オレンジ快速アクティー.単体大</option>
+                <option value="オレンジ快速アーバン.単体大">オレンジ快速アーバン.単体大</option>
+                <option value="オレンジ快速ラビット.単体大">オレンジ快速ラビット.単体大</option>
                 <option value="緑普通.宇都宮">緑普通.宇都宮</option>
                 <option value="緑普通.高崎">緑普通.高崎</option>
                 <option value="緑普通.東海道">緑普通.東海道</option>
                 <option value="緑普通.横須賀">緑普通.横須賀</option>
                 <option value="グレー普通.単体大">グレー普通.単体大</option>
+                <option value="グレー普通.宇都宮">グレー普通.宇都宮</option>
+                <option value="グレー普通.高崎">グレー普通.高崎</option>
                 <option value="スカイブルー特別快速.単体大">スカイブルー特別快速.単体大</option>
+                <option value="スカイブルー特別快速.宇都宮">スカイブルー特別快速.宇都宮</option>
+                <option value="スカイブルー特別快速.高崎">スカイブルー特別快速.高崎</option>
+                <option value="スカイブルー特別快速.東海道">スカイブルー特別快速.東海道</option>
                 <option value="相鉄線">相鉄線</option>
                 <option value="5050専用急行">5050専用急行</option>
                 <option value="E001専用四季島">E001専用四季島</option>
                 <option value="Hikarei専用快速急行">Hikarei専用快速急行</option>
                 <option value="特急単体大">特急単体大</option>
               </select>
-              <button type="button" class="btn btn-secondary" onclick="addSelectedPreset()">➕ 追加</button>
-            </div>
-
-            <!-- 画像リアルタイムサムネイルプレビュー -->
-            <label style="margin-top: 8px;">🖼️ 選択・入力中の種別画像プレビュー:</label>
-            <div class="candidate-preview-area" id="candidatePreviewArea">
-              <span style="font-size:11px; color:#8b949e;">ここに設定中の種別画像サムネイルが表示されます</span>
+              <button type="button" class="btn btn-secondary" onclick="addSelectedPreset()">➕ プルダウンから追加</button>
             </div>
           </div>
 
@@ -475,7 +432,7 @@
   </div>
 
   <script>
-    // 本物の標準 `vehicle_catalog.json` 内データ（フォールバック用）
+    // 標準 `vehicle_catalog.json` 内データ（フォールバック用）
     const standardDefaultCatalog = [
       {
         "vehicle": "103系",
@@ -531,68 +488,12 @@
       },
       {
         "vehicle": "5050系Hikarie",
-        "remark": "§f§b§c#ffff00【☆彡車両案内☆彡】§n 現在表示中の車両は特別仕様車、§b§c#ffd700東急5050系4000番台「Shibuya Hikarie号」§nです！渋谷のランドマーク『渋谷ヒカリエ』の開業1周年を記念して登場しました。通常の赤帯とは異なり、建物をイメージした§b§c#ffd700ゴールド§nを基調とする煌びやかなラッピングが施され、編成全体で§b§c#ffcc00渋谷の街の魅力§nを表現しています。広大で直通ネットワークの中でも一際目を引く§b§c#ffff00黄金の輝き§nは注目の的。多彩な顔を見せる東横線ダイヤの中で異彩を放つ§b§c#ff9900特別な姿§nをお楽しみください！☆彡",
+        "remark": "§f§b§c#ffff00【☆彡車両案内☆彡】§n 現在表示中の車両は特別仕様車、§b§c#ffd700東急5050系4000番台「Shibuya Hikarie号」§nです！渋谷のランドマーク『渋谷ヒカリエ』の開業1周年を記念して登場しました。通常の赤帯とは異なり、建物をイメージした§b§c#ffd700ゴールド§nを基調とする煌びやかなラッピングが施され、編成全体で§b§c#ffcc00渋谷の街の魅力§nを表現しています。広大な直通ネットワークの中でも一際目を引く§b§c#ffff00黄金の輝き§nは注目の的。多彩な顔を見せる東横線ダイヤの中で異彩を放つ§b§c#ff9900特別な姿§nをお楽しみください！☆彡",
         "candidates": ["Hikarei専用快速急行"]
       }
     ];
 
     let catalogList = [...standardDefaultCatalog];
-
-    // 画像URLのフォールバック解決関数
-    function resolveImgCandidates(keyword) {
-      if (!keyword) return [];
-      const base = String(keyword).trim();
-      return [
-        `img/渋谷南改札口型/種別-シリーズ/種別-渋谷南改札口型-${base}-jp.png`,
-        `img/渋谷南改札口型/種別-シリーズ/種別-渋谷南改札口型-${base}.png`,
-        `img/渋谷南改札口型/種別-シリーズ/種別-${base}-jp.png`,
-        `img/渋谷南改札口型/種別-シリーズ/種別-${base}.png`,
-        `種別-${base}.png`,
-        `種別-渋谷南改札口型-${base}.png`
-      ];
-    }
-
-    // 種別キーワードの画像サムネイルプレビュー更新
-    function updateCandidatePreviews() {
-      const area = document.getElementById("candidatePreviewArea");
-      const text = document.getElementById("v_candidates").value.trim();
-      area.innerHTML = "";
-
-      if (!text) {
-        area.innerHTML = '<span style="font-size:11px; color:#8b949e;">ここに設定中の種別画像サムネイルが表示されます</span>';
-        return;
-      }
-
-      const keywords = text.split(",").map(s => s.trim()).filter(Boolean);
-      keywords.forEach(kw => {
-        const box = document.createElement("div");
-        box.className = "candidate-thumb-box";
-
-        const img = document.createElement("img");
-        const urls = resolveImgCandidates(kw);
-        img.alt = kw;
-
-        // エラー時の多重フォールバック試行
-        let urlIdx = 0;
-        img.onerror = function() {
-          urlIdx++;
-          if (urlIdx < urls.length) {
-            img.src = urls[urlIdx];
-          } else {
-            img.style.display = "none";
-          }
-        };
-        img.src = urls[0];
-
-        const label = document.createElement("span");
-        label.className = "candidate-thumb-label";
-        label.textContent = kw;
-
-        box.appendChild(img);
-        box.appendChild(label);
-        area.appendChild(box);
-      });
-    }
 
     function addSelectedPreset() {
       const select = document.getElementById("presetCandidateSelect");
@@ -604,7 +505,6 @@
       if (!existing.includes(val)) {
         existing.push(val);
         input.value = existing.join(", ");
-        updateCandidatePreviews();
       }
       select.value = "";
     }
@@ -718,15 +618,9 @@
         const div = document.createElement("div");
         div.className = "item-card";
         
-        const tagsHtml = (item.candidates || []).map(c => {
-          const urls = resolveImgCandidates(c);
-          return `
-            <span class="tag">
-              <img src="${urls[0]}" onerror="this.src='${urls[1]}'; this.onerror=function(){ this.style.display='none'; };" alt="${c}">
-              ${c}
-            </span>
-          `;
-        }).join(" ");
+        const tagsHtml = (item.candidates || []).map(c => `
+          <span class="tag">🏷️ ${c}</span>
+        `).join(" ");
 
         div.innerHTML = `
           <div class="item-info">
@@ -778,7 +672,6 @@
       document.getElementById("formTitle").textContent = "✏️ 車両カタログデータの編集";
       document.getElementById("saveBtn").textContent = "💾 更新を保存";
       updateLivePreview();
-      updateCandidatePreviews();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -795,7 +688,6 @@
       document.getElementById("formTitle").textContent = "➕ 車両カタログデータの追加 / 編集";
       document.getElementById("saveBtn").textContent = "➕ リストに追加";
       updateLivePreview();
-      updateCandidatePreviews();
     }
 
     function downloadCatalogJson() {
@@ -850,7 +742,6 @@
       });
 
     updateLivePreview();
-    updateCandidatePreviews();
   </script>
 </body>
 </html>
